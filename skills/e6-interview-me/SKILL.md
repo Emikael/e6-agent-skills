@@ -7,7 +7,7 @@ description: Use when an ask is underspecified, requirements are fuzzy, or the u
 
 ## Overview
 
-Find the user's actual outcome before selecting a solution. Ask one focused question at a time when a material unknown remains. Existing answers and delegated choices count.
+Find the user's actual outcome before selecting a solution. Ask one focused question at a time while a material unknown remains. Do not re-ask what the user already answered or what they delegated to you.
 
 ## When to Use
 
@@ -15,15 +15,17 @@ Find the user's actual outcome before selecting a solution. Ask one focused ques
 - Two plausible interpretations would produce different behavior or scope.
 - The user explicitly requests an interview or intent check.
 
-Skip pure information requests and mechanical edits. A missing field alone is not a reason to interview when the task or project already answers it.
+Skip pure information requests, mechanical edits, and fields the task or project already answers.
+
+**Not for:** choosing among solution directions → `e6-idea-refine`; writing requirements once intent is clear → `e6-spec-driven-development`; adversarial review of a finished plan → `e6-doubt-driven-development`.
 
 ## Process
 
 ### 1. Read before asking
 
-Follow `e6-context-engineering`. Read the current request, prior decisions in this task, the active intent/spec, and relevant project rules or code pointers. Search only the area needed to resolve the ask. Do not read the entire repo or sibling conversations.
+Follow `e6-context-engineering`. Read the current request, prior decisions, the active intent or spec, and relevant project rules or code. Search only the area needed to resolve the ask.
 
-State a tentative hypothesis in one sentence. Name what is known and the material uncertainty. A confidence estimate can help, but predicting three hypothetical answers is not evidence of agreement.
+State a tentative hypothesis in one sentence and name the material uncertainty. Confidence is not evidence: only the user's answers or project facts settle an unknown.
 
 ```text
 HYPOTHESIS: You need a personal list of running experiments.
@@ -32,15 +34,18 @@ UNCERTAIN: Which source owns experiment status and what makes a result useful?
 
 ### 2. Ask the next useful question
 
-Ask one question whose answer changes the outcome, acceptance, or constraint. Attach an honest tentative guess or concrete options when they make answering easier. Wait for the answer before choosing the next question. Never invent a wrong guess to provoke a reaction.
+Ask one question whose answer changes the outcome, acceptance, or a constraint. Wait for the answer before choosing the next one.
 
-Probe vague goals such as "scalable" or "modern": what observable result matters? If the user describes convention rather than a need, ask what they would want without having to justify it.
+- If the host has a structured-question tool, use it: one question, 2–4 concrete options, plus "other". Otherwise ask in plain text with the same options.
+- Probe vague goals such as "scalable" or "modern": which observable result matters?
+
+**Budget:** about five questions for a typical feature. If material unknowns remain after that, restate the intent with them listed as Open decisions and let the user pick which to settle. An explicit "grill me" may go deeper, but every question must still change the outcome.
 
 Accept explicit delegation such as "choose the simplest option". Make a reversible choice within that authority and record it. Ask again only if the remaining choice changes material product behavior, money, permissions, or stored data.
 
 ### 3. Restate the intent
 
-Use the user's language. Keep the statement short:
+Use the user's language:
 
 ```text
 Outcome: <result>
@@ -49,18 +54,23 @@ Why now: <known reason, or not relevant>
 Success: <observable evidence>
 Constraint: <binding limit>
 Out of scope: <specific non-goals>
-Open decision: <material unknown, or none>
+Open decisions: <material unknowns, or none>
 ```
 
-Clear confirmation includes "yes", "sounds good", or "sure, build it" when it refers to this concrete statement. Prior authorization and clear delegation also count. Silence does not settle a material unknown. Fold corrections into the intent; do not demand a specific word.
+Clear confirmation includes "yes", "sounds good", or "sure, build it" when it refers to this statement. Prior authorization and clear delegation also count. Silence does not settle a material unknown. Fold corrections into the statement.
 
-Stop interviewing once the intent is sufficient to define acceptance and unresolved decisions are explicit. If answers keep changing the frame, explain the contradiction in one sentence and ask the question that resolves it. Do not grind through an arbitrary confidence target.
+Stop once the intent is sufficient to define acceptance and the remaining Open decisions are explicit. If answers keep changing the frame, name the contradiction and ask the question that resolves it.
 
-### 4. Persist and hand off
+### 4. Record the result
 
-Use the project's existing intent location; otherwise `docs/intent/[topic].md` for engineering work that needs a durable record. Save within the authorized task. For an interview-only request, return the statement and stop. For a request to build, continue through the coordinator with `e6-idea-refine` when options remain or `e6-spec-driven-development` when scope is concrete.
+- **Interview-only request:** return the statement; save it only if asked.
+- **Build request:** larger work saves it to the project's intent location, otherwise `docs/intent/<topic>.md` ([Artifacts](../../references/workflow-contract.md#artifacts)). Small work keeps it inline.
 
-In non-interactive work, use existing facts and authorized defaults. Record unresolved material decisions as blockers; continue independent authorized work. Do not simulate a user's confirmation.
+In non-interactive work, use existing facts and authorized defaults. Record unresolved material decisions as blockers and continue independent work. Never simulate the user's confirmation.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). An interview-only request stops at the confirmed statement; a build continues to `e6-idea-refine` when solution options remain, or to `e6-spec-driven-development` when scope is concrete.
 
 ## Common Rationalizations
 
@@ -74,19 +84,15 @@ In non-interactive work, use existing facts and authorized defaults. Record unre
 ## Red Flags
 
 - Asking for facts present in the active spec or project.
-- Batching dependent questions or knowingly leading with a false guess.
-- Treating arbitrary confidence as a completion gate.
+- Batching several questions into one turn, or exceeding the budget without listing Open decisions.
+- Treating confidence as evidence.
 - Starting a spec while a material product decision remains unresolved.
 - Stopping an authorized build because the interview finished.
 
 ## Verification
 
 - [ ] Relevant existing intent and project facts were read first.
-- [ ] Only unresolved material questions were asked, one at a time.
+- [ ] Only material questions were asked, one at a time, within the budget.
 - [ ] Outcome, user, observable success, constraints, and non-goals are recorded.
-- [ ] Confirmation or delegated authority is clear; remaining uncertainty is explicit.
+- [ ] Confirmation or delegated authority is clear; Open decisions are explicit.
 - [ ] Interview-only scope stayed bounded; authorized engineering work advanced.
-
-## Workflow Handoff
-
-For a standalone engineering task with no active workflow, use `using-e6-agent-skills`. Otherwise update the current phase evidence and return to its coordinator without recursively reloading the router. Follow [the workflow contract](../../references/workflow-contract.md). Use `e6-caveman` for concise user updates and delegation.

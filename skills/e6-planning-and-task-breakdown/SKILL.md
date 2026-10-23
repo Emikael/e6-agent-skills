@@ -7,86 +7,97 @@ description: Use when a spec, PRD, or clear requirements need an ordered impleme
 
 ## Overview
 
-Turn settled requirements into small vertical slices. Each task names the acceptance it proves, the paths it owns, and the tests and local runtime evidence needed to finish.
+Turn settled requirements into small vertical slices. Each task names the requirement IDs it proves, the paths it owns, and the tests and local runtime evidence needed to finish.
 
 ## When to Use
 
 - A spec needs executable tasks or dependency order.
 - Work is too large for one focused implementation session.
-- Independent work needs coordination.
+- Independent work needs coordination, or the user wants an estimate.
 
-Skip a separate plan artifact for obvious mechanical work or an already executable task list. Unresolved product behavior returns to `e6-spec-driven-development`; planning does not invent it.
+Skip a separate plan for obvious mechanical work, a contract [fast-path](../../references/workflow-contract.md#fast-path) change, or an already executable task list.
+
+**Not for:** unsettled product behavior → `e6-spec-driven-development` (planning never invents it); executing a task → `e6-incremental-implementation`; building a worker packet → `e6-context-engineering`.
 
 ## Process
 
 ### 1. Inspect before planning
 
-Follow `e6-context-engineering`. Read active requirements, rules, constraints, relevant code/interfaces, test patterns, and test/build/local launch scripts. Reuse decisions. Search relevant paths only; exclude whole-repo and sibling-conversation loading.
-
-Inspect code without production edits. Record dependencies, risks, and material unknowns. Discover commands; do not guess npm scripts.
+Follow `e6-context-engineering`. Read requirements, rules, constraints, relevant code, test patterns, and the real test/build/launch scripts. Do not edit production code while planning. Record dependencies, risks, and unknowns; never guess commands.
 
 ### 2. Map dependencies and slice vertically
 
-Order foundations/contracts before consumers. Slice working behavior through storage, API, and UI rather than completing entire layers separately.
+Order foundations and contracts before consumers. Slice working behavior through storage, API, and UI rather than finishing whole layers. Each slice leaves the system runnable. Put risky work early; keep migrations, shared state, and dependency chains sequential.
 
-The capability map fixes module boundaries. One task cites requirements from one module. Split a cross-module task or record a boundary delta through the spec coordinator. Define shared interface contracts before parallel consumers.
-
-Each slice leaves the system runnable. Put uncertain or high-risk work early. Treat migrations, shared state, and dependency chains as sequential.
+When a capability map exists, it fixes module boundaries: one task cites one module's requirements; split cross-module tasks or record a boundary delta in the spec. Record significant architecture decisions with `e6-documentation-and-adrs`.
 
 ### 3. Write acceptance-backed tasks
 
-Use the project's task target and format. Otherwise save the plan at `tasks/plan.md` and checklist at `tasks/todo.md`.
+Use the project's task location and format. Otherwise use the contract's [Artifacts](../../references/workflow-contract.md#artifacts): one status source.
+
+- `tasks/plan.md` holds rationale, decisions, and task bodies. **No status.**
+- `tasks/todo.md` holds status, one line per task.
+- `tasks/workflow-state.md` holds the phase pointer, evidence, overrides, blockers, and next action; no task list.
+
+`tasks/plan.md` skeleton:
 
 ```markdown
-## Task 2: Assigned user receives one email
+# Plan: <feature>
+Spec: <path#section or inline> — Constraints: CONSTRAINTS.md
+## Decisions
+- <decision and reason; ADR link if significant>
+## Tasks
+### T2: Assigned user receives one email
 Requirements: NOTIFY-2, NOTIFY-3
-Acceptance: Given opted-in user and assignment event, when the event is
-retried, then one email is delivered and one status record exists.
-Proof:
-- RED/GREEN: duplicate-event integration test asserts email/status count.
-- Command: [discovered focused-test command]
-- Local runtime: [launch command]; assign task, retry event, inspect result.
-- Regression/build/constraints: [applicable discovered commands]
-Dependencies: Task 1 preference contract
-Owned paths: [implementation and test paths]
-Context pointers: [requirement section, adapter, test pattern, rules]
-Status/evidence: [pending; later commands, exits, observed outcome]
+Acceptance: Given an opted-in user and an assignment event, when the event
+is retried, then one email is delivered and one status record exists.
+Proof: RED/GREEN duplicate-event integration test (<focused command>);
+local runtime: <launch command>, assign, retry, inspect; regressions: <commands>
+Dependencies: T1
+Owned paths: <implementation and test paths>
+Context pointers: <spec section, adapter, test pattern, rules>
+## Checkpoints
+- After T2: <integrated flow to run>
+## Risks and Open decisions
 ```
 
-When requirements lack IDs, cite their text; do not invent behavior to create an ID. Copy the scenario faithfully. Add relevant failure and boundary inputs from the spec. Tests must distinguish correct behavior from a plausible broken implementation, not assert that functions happen to be called.
+`tasks/todo.md` line format: `- [ ] T<n> <requirement IDs> <title> — <status>[: evidence or reason]`. Status uses the contract's words (`pending`, `active`, `done`, `blocked`, `skipped: <reason>`); tick the box only for `done` or `skipped`.
 
-Select local proof: browser for web UI, computer/simulator for native UI, requests for APIs, invocation/output for CLI, caller behavior for libraries. Builds supplement runtime. Record missing runtime capability and incomplete acceptance.
+```text
+- [x] T1 PREF-1 Preference contract — done: `<command>` exit 0
+- [ ] T2 NOTIFY-2,NOTIFY-3 Assigned user receives one email — active
+- [ ] T3 NOTIFY-4 Daily digest — blocked: <reason> → <next step>
+```
+
+When requirements lack IDs, cite their text; never invent behavior to create an ID. Copy scenarios faithfully, including the spec's failure and boundary inputs. Tests must distinguish correct behavior from a plausible broken implementation.
+
+Select local proof: browser for web UI, computer or simulator for native UI, requests for APIs, invocation for CLIs, caller behavior for libraries. A build does not replace runtime proof; record missing runtime capability.
 
 ### 4. Size, order, and checkpoint
 
-Prefer roughly 1–5 files and a few acceptance outcomes per task. Split multi-session or independent work; file counts guide sizing.
+**Sizing rule** (shared with `e6-incremental-implementation`): a task changes one observable behavior or contract, touches about 1–5 files, and stays near 100 changed lines, so a failure is diagnosable in one session. Split tasks that exceed this or bundle independent outcomes. Never split tightly coupled edits into broken intermediate states.
 
-At dependency boundaries or after roughly 2–3 tasks, checkpoint:
+**Estimating**, when asked: size by slice count and risk. S = 1–2 tasks on known patterns; M = 3–5 tasks or one unfamiliar dependency; L = 6+ tasks, a migration, or an Open decision. Name the risk that would move the estimate.
 
-- Acceptance tests and applicable regression/constraint checks pass.
-- The increment builds and runs through its representative local flow.
-- Evidence and remaining uncertainty are recorded.
-- Review findings are fixed or explicitly resolved.
+At dependency boundaries or every 2–3 tasks, checkpoint: acceptance and regression checks pass, the increment runs through its local flow, evidence is recorded, and review findings are resolved. Passing evidence advances authorized work.
 
-Passing evidence advances the coordinator within task authority. Ask only unresolved material decisions or unauthorized actions.
+### 5. Present or save
 
-### 5. Save without destroying active work
+**Plan mode or approve-first:** if the host is in read-only planning mode or the user asked to approve the plan, present it inline, write nothing, and stop. Explicit approval authorizes Build ([plan mode](../../references/workflow-contract.md#plan-mode-and-requested-approval)).
 
-Check existing plan/task artifacts first. For the same work, update in place. For different unfinished work, preserve it and use a distinct task-specific location, recording the active paths with the coordinator. Ask when project policy requires one active plan or the conflict cannot be resolved without discarding work.
+Otherwise check existing artifacts first. Update the same work in place; preserve different unfinished work in a distinct task-specific location recorded in the workflow state. Ask only when policy permits a single active plan or a conflict would discard work.
 
-For an authorized designated external tracker, record one item per task plus dependency links and checkpoints. Keep `tasks/plan.md` as rationale and an ordered index of tracker IDs, not a second status checklist. If tracker writes are outside authorization, use a local draft and name the pending action. Do not close another plan's items.
+With an authorized external tracker, create one item per task with dependency links; the tracker then holds status and `tasks/plan.md` lists tracker IDs. If tracker writes are not authorized, keep a local draft and name the pending action.
 
-Plan: outcome, spec/constraint pointers, architecture decisions, ordered tasks, checkpoints, risks, open decisions. Do not duplicate the spec.
+### 6. Delegate only independent work
 
-### 6. Delegate only useful independent work
+Delegate when owned paths and acceptance are clear and a separate context saves work; otherwise keep the task local. Packets and returns follow the contract's [Delegation](../../references/workflow-contract.md#delegation) rules. Parallel writers use isolated worktrees (`e6-git-workflow-and-versioning`) or run serially. Resolve shared contracts before fan-out. The coordinator inspects each diff and verifies the integrated flow.
 
-Use `e6-caveman`. Delegate when independent owned paths and acceptance are clear and a separate context saves work. Otherwise keep the task local.
+Apply the standing [Definition of Done](../../references/definition-of-done.md) alongside task acceptance.
 
-The input packet is at most 500 words: goal, acceptance IDs/scenarios, owned paths, dependencies, commands, and minimal context pointers. Use fresh context when supported; workers read those pointers, not the entire repo or sibling conversations. No nested agents. Resolve shared contracts first and prevent overlapping writes.
+## Workflow Handoff
 
-Result, at most 200 words: changed paths, acceptance commands/exits, unresolved findings/decisions, next step. The coordinator inspects diff/evidence and verifies the integrated flow.
-
-For a plan-only request, return the saved plan. For a build request, continue with `e6-incremental-implementation` and `e6-test-driven-development` through the coordinator.
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). A plan-only request stops at the saved or presented plan; an authorized build continues with `e6-incremental-implementation` and `e6-test-driven-development`.
 
 ## Common Rationalizations
 
@@ -94,28 +105,22 @@ For a plan-only request, return the saved plan. For a build request, continue wi
 |---|---|
 | "Tests pass is enough for the task" | Name the acceptance scenario and prove its local behavior. |
 | "I'll build all layers, then connect them" | Vertical slices expose integration problems earlier. |
-| "Parallel agents are always faster" | Shared paths and dependency chains require sequencing. |
+| "Parallel agents are always faster" | Shared paths and dependency chains require sequencing or isolated worktrees. |
 | "Every checkpoint needs another yes" | Evidence advances authorized work; material choices need input. |
 
 ## Red Flags
 
-- Generic tasks without requirement references or proof.
+- Generic tasks without requirement IDs or proof.
 - Guessed commands or build-only verification of user behavior.
-- Overwritten incomplete plans or duplicate task status sources.
-- Full-repo delegation, overlapping ownership, or nested agents.
+- Status written in `tasks/plan.md`, or an incomplete plan overwritten.
+- Files written in plan mode or before a requested approval.
+- Overlapping ownership, or parallel writers sharing one working tree.
 - Unresolved product decisions silently turned into implementation tasks.
 
 ## Verification
 
-- [ ] Active rules, requirements, constraints, and real commands were read.
-- [ ] Small vertical tasks cite one module's acceptance and meaningful proof.
-- [ ] Dependencies, owned paths, local runtime, and checkpoints are explicit.
-- [ ] Existing work is preserved; active artifact/tracker pointers are recorded.
-- [ ] Delegation is bounded and independent when used.
-- [ ] Plan-only scope stayed bounded; authorized builds advanced.
-
-Apply the standing [Definition of Done](../../references/definition-of-done.md) alongside task acceptance.
-
-## Workflow Handoff
-
-For a standalone engineering task with no active workflow, use `using-e6-agent-skills`. Otherwise update the current phase evidence and return to its coordinator without recursively reloading the router. Follow [the workflow contract](../../references/workflow-contract.md). Use `e6-caveman` for concise user updates and delegation.
+- [ ] Rules, requirements, constraints, and real commands were read.
+- [ ] Small vertical tasks cite requirement IDs, owned paths, dependencies, proof, and checkpoints.
+- [ ] Status lives only in `tasks/todo.md` (or the tracker); existing work is preserved.
+- [ ] Plan mode or a requested approval stopped before any write.
+- [ ] Delegation is independent and isolated when used; plan-only scope stayed bounded.

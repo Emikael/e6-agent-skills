@@ -1,6 +1,6 @@
 # Refinement & Evaluation Criteria
 
-Use this rubric during Phase 2 (Evaluate & Converge) to stress-test idea directions. Not every criterion applies to every idea — use judgment about which dimensions matter most for the specific context.
+Use this rubric during step 3 (Evaluate and converge) of SKILL.md to stress-test idea directions. Not every criterion applies to every idea — use judgment about which dimensions matter most for the specific context.
 
 ## Core Evaluation Dimensions
 
@@ -77,9 +77,9 @@ What makes this genuinely different? Not better — *different*.
 For every idea direction, explicitly list assumptions in three categories:
 
 ### Must Be True (Dealbreakers)
-Assumptions that, if wrong, kill the idea entirely. These need validation before building.
+Assumptions that, if wrong, kill the idea entirely. These need validation before building, and they go in the one-pager's "Assumptions to validate" section.
 
-Example: "Users will share their data with us" — if they won't, the entire product doesn't work.
+Example: "Users will share their data with us" — if they won't, the entire product doesn't work. Experiment: ask 10 target users to connect their data; pass if ≥6 do, fail if ≤2; time limit: 2 weeks.
 
 ### Should Be True (Important)
 Assumptions that significantly impact success but don't kill the idea. You can adjust the approach if these are wrong.
@@ -90,6 +90,10 @@ Example: "Users prefer self-serve over talking to a person" — if wrong, you ne
 Assumptions about secondary features or optimizations. Don't validate these until the core is proven.
 
 Example: "Users will want to share their results with teammates" — a growth feature, not a core value proposition.
+
+### Writing a testable assumption
+
+Every assumption you plan to validate needs four parts: the claim, an experiment, an observable pass/fail threshold set before the experiment runs, and a time limit. "Users like it" is not a threshold; "≥30% of pilot users repeat the action within 4 weeks" is.
 
 ## Decision Framework
 
@@ -109,5 +113,5 @@ When defining MVP scope for the chosen direction:
 1. **One job, done well.** The MVP should nail exactly one user job. Not three jobs done partially.
 2. **The riskiest assumption first.** The MVP's primary purpose is to test the assumption most likely to be wrong.
 3. **Time-box, not feature-list.** "What can we build and test in [timeframe]?" is better than "What features do we need?"
-4. **The 'Not Doing' list is mandatory.** Explicitly name what you're cutting and why. This prevents scope creep and forces honest prioritization.
+4. **The "Not doing, and why" list is mandatory.** Explicitly name what you're cutting and why. This prevents scope creep and forces honest prioritization.
 5. **If it's not embarrassing, you waited too long.** The first version should feel incomplete to the builder. If it doesn't, you over-built.

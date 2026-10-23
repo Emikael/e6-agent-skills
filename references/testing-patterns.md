@@ -1,45 +1,185 @@
-# Testing Patterns Reference (JavaScript/TypeScript)
+# Testing Patterns Reference
 
-Quick reference of JavaScript/TypeScript testing patterns — Jest, React Testing Library, Supertest, and Playwright — illustrating the universal principles from the `e6-test-driven-development` skill. The principles (Arrange-Act-Assert, naming, mock discipline, anti-patterns) apply in any ecosystem; the syntax and tooling shown here are JS/TS-specific. In another stack, follow the same principles with the repository's own test framework and commands.
+Testing principles and examples for the `e6-test-driven-development` skill. Read only the sections the current test needs. The principles (test levels, state-based assertions, DAMP tests, test-double discipline, anti-patterns) apply in any ecosystem. Code examples use JavaScript/TypeScript (Jest, React Testing Library, Supertest, Playwright); in another stack, apply the same principles with the repository's own framework and commands.
 
 ## Table of Contents
 
-- [Test Structure (Arrange-Act-Assert)](#test-structure-arrange-act-assert)
-- [Test Naming Conventions](#test-naming-conventions)
+- [Choosing a Test Level](#choosing-a-test-level)
+- [Writing Good Tests](#writing-good-tests)
+- [Test Doubles](#test-doubles)
 - [Common Assertions](#common-assertions)
-- [Mocking Patterns](#mocking-patterns)
 - [React/Component Testing](#reactcomponent-testing)
 - [API / Integration Testing](#api--integration-testing)
 - [E2E Testing (Playwright)](#e2e-testing-playwright)
 - [Test Anti-Patterns](#test-anti-patterns)
 
-## Test Structure (Arrange-Act-Assert)
+## Choosing a Test Level
+
+Prefer small, fast tests when they prove the accepted outcome. The pyramid's percentages are illustrative, not quotas: use boundary or end-to-end checks when the risk requires them.
+
+```
+          ╱╲
+         ╱  ╲         E2E (~5%): full user flows, real browser
+        ╱────╲
+       ╱      ╲       Integration (~15%): component interactions, API boundaries
+      ╱────────╲
+     ╱          ╲     Unit (~80%): pure logic, isolated, milliseconds each
+    ╱────────────╲
+```
+
+If a behavior matters, a test should catch its breakage. Refactors, migrations, and infrastructure changes are not responsible for finding your bugs; your tests are.
+
+### Test sizes (resource model)
+
+| Size | Constraints | Speed | Example |
+|---|---|---|---|
+| **Small** | Single process; no I/O, network, or database | Milliseconds | Pure functions, data transforms |
+| **Medium** | Multiple processes allowed; localhost only; no external services | Seconds | API tests with a test database, component tests |
+| **Large** | Multiple machines and external services allowed | Minutes | End-to-end flows, performance benchmarks, staging integration |
+
+Small tests should make up most of the suite: they are fast, reliable, and easy to debug.
+
+### Decision guide
+
+```
+Pure logic with no side effects?                → Unit test (small)
+Crosses a boundary (API, database, filesystem)? → Integration test (medium)
+Critical user flow that must work end to end?   → E2E test (large); limit to critical paths
+```
+
+## Writing Good Tests
+
+### Structure: Arrange-Act-Assert
 
 ```typescript
-it('describes expected behavior', () => {
-  // Arrange: Set up test data and preconditions
-  const input = { title: 'Test Task', priority: 'high' };
+it('marks overdue tasks when the deadline has passed', () => {
+  // Arrange: set up the scenario
+  const task = createTask({ title: 'Test', deadline: new Date('2025-01-01') });
 
-  // Act: Perform the action being tested
-  const result = createTask(input);
+  // Act: perform the behavior under test
+  const result = checkOverdue(task, new Date('2025-01-02'));
 
-  // Assert: Verify the outcome
-  expect(result.title).toBe('Test Task');
-  expect(result.priority).toBe('high');
-  expect(result.status).toBe('pending');
+  // Assert: verify the observable outcome
+  expect(result.isOverdue).toBe(true);
 });
 ```
 
-## Test Naming Conventions
+### Test state, not interactions
+
+Assert the outcome of an operation, not which internal methods were called. Interaction-based tests break on refactors even when behavior is unchanged.
+
+```typescript
+// Good: state-based — tests what the function does
+it('returns tasks sorted by creation date, newest first', async () => {
+  const tasks = await listTasks({ sortBy: 'createdAt', sortOrder: 'desc' });
+  expect(tasks[0].createdAt.getTime()).toBeGreaterThan(tasks[1].createdAt.getTime());
+});
+
+// Bad: interaction-based — tests how it works internally
+it('calls db.query with ORDER BY created_at DESC', async () => {
+  await listTasks({ sortBy: 'createdAt', sortOrder: 'desc' });
+  expect(db.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY created_at DESC'));
+});
+```
+
+### DAMP over DRY
+
+In production code, DRY is usually right. In tests, prefer **DAMP (Descriptive And Meaningful Phrases)**: each test reads like a specification and tells a complete story without tracing shared helpers. Duplication is acceptable when it makes each test independently understandable.
+
+```typescript
+it('rejects tasks with empty titles', () => {
+  const input = { title: '', assignee: 'user-1' };
+  expect(() => createTask(input)).toThrow('Title is required');
+});
+
+it('trims whitespace from titles', () => {
+  const input = { title: '  Buy groceries  ', assignee: 'user-1' };
+  expect(createTask(input).title).toBe('Buy groceries');
+});
+```
+
+### One concept per test
+
+```typescript
+// Good: each test verifies one behavior
+it('rejects empty titles', () => { /* ... */ });
+it('trims whitespace from titles', () => { /* ... */ });
+it('enforces maximum title length', () => { /* ... */ });
+
+// Bad: everything in one test; the first failure hides the rest
+it('validates titles correctly', () => {
+  expect(() => createTask({ title: '' })).toThrow();
+  expect(createTask({ title: '  hello  ' }).title).toBe('hello');
+  expect(() => createTask({ title: 'a'.repeat(256) })).toThrow();
+});
+```
+
+### Name tests by behavior
 
 ```typescript
 // Pattern: [unit] [expected behavior] [condition]
-describe('TaskService.createTask', () => {
-  it('creates a task with default pending status', () => {});
-  it('throws ValidationError when title is empty', () => {});
-  it('trims whitespace from title', () => {});
-  it('generates a unique ID for each task', () => {});
+describe('TaskService.completeTask', () => {
+  it('sets status to completed and records the timestamp', () => {});
+  it('throws NotFoundError for a non-existent task', () => {});
+  it('is idempotent: completing a completed task is a no-op', () => {});
 });
+
+// Bad: vague names
+describe('TaskService', () => {
+  it('works', () => {});
+  it('handles errors', () => {});
+});
+```
+
+## Test Doubles
+
+Use the simplest double that does the job. The more real code a test runs, the more confidence it gives.
+
+```
+Preference order (most to least preferred):
+1. Real implementation  → highest confidence, catches real bugs
+2. Fake                 → in-memory version of a dependency (e.g. fake DB)
+3. Stub                 → returns canned data, no behavior
+4. Mock (interaction)   → verifies calls; use sparingly
+```
+
+Mock only at boundaries where the real dependency is slow, nondeterministic, or has side effects you cannot control. Over-mocking produces tests that pass while production breaks.
+
+```
+Mock these:                    Don't mock these:
+├── Database calls             ├── Internal utility functions
+├── HTTP requests              ├── Business logic
+├── File system operations     ├── Data transformations
+├── External API calls         ├── Validation functions
+└── Time/Date (when needed)    └── Pure functions
+```
+
+### Mock functions (Jest)
+
+```typescript
+const mockFn = jest.fn();
+mockFn.mockReturnValue(42);
+mockFn.mockResolvedValue({ data: 'test' });
+mockFn.mockImplementation((x) => x * 2);
+
+expect(mockFn).toHaveBeenCalled();
+expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
+expect(mockFn).toHaveBeenCalledTimes(3);
+```
+
+### Mock modules (Jest)
+
+```typescript
+// Mock an entire module
+jest.mock('./database', () => ({
+  query: jest.fn().mockResolvedValue([{ id: 1, title: 'Test' }]),
+}));
+
+// Mock specific exports, keep the rest real
+jest.mock('./utils', () => ({
+  ...jest.requireActual('./utils'),
+  generateId: jest.fn().mockReturnValue('test-id'),
+}));
 ```
 
 ## Common Assertions
@@ -79,47 +219,6 @@ expect(() => fn()).toThrow('specific message');
 // Async
 await expect(asyncFn()).resolves.toBe(value);
 await expect(asyncFn()).rejects.toThrow(Error);
-```
-
-## Mocking Patterns
-
-### Mock Functions
-
-```typescript
-const mockFn = jest.fn();
-mockFn.mockReturnValue(42);
-mockFn.mockResolvedValue({ data: 'test' });
-mockFn.mockImplementation((x) => x * 2);
-
-expect(mockFn).toHaveBeenCalled();
-expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
-expect(mockFn).toHaveBeenCalledTimes(3);
-```
-
-### Mock Modules
-
-```typescript
-// Mock an entire module
-jest.mock('./database', () => ({
-  query: jest.fn().mockResolvedValue([{ id: 1, title: 'Test' }]),
-}));
-
-// Mock specific exports
-jest.mock('./utils', () => ({
-  ...jest.requireActual('./utils'),
-  generateId: jest.fn().mockReturnValue('test-id'),
-}));
-```
-
-### Mock at Boundaries Only
-
-```
-Mock these:                    Don't mock these:
-├── Database calls             ├── Internal utility functions
-├── HTTP requests              ├── Business logic
-├── File system operations     ├── Data transformations
-├── External API calls         ├── Validation functions
-└── Time/Date (when needed)    └── Pure functions
 ```
 
 ## React/Component Testing
@@ -171,11 +270,11 @@ describe('POST /api/tasks', () => {
     expect(response.body).toMatchObject({
       id: expect.any(String),
       title: 'Test Task',
-      status: 'pending',
+      status: 'PENDING',
     });
   });
 
-  it('returns 422 for invalid input', async () => {
+  it('returns 422 for well-formed but invalid input', async () => {
     const response = await request(app)
       .post('/api/tasks')
       .send({ title: '' })
@@ -225,11 +324,12 @@ test('user can create and complete a task', async ({ page }) => {
 
 | Anti-Pattern | Problem | Better Approach |
 |---|---|---|
-| Testing implementation details | Breaks on refactor | Test inputs/outputs |
-| Snapshot everything | No one reviews snapshot diffs | Assert specific values |
-| Shared mutable state | Tests pollute each other | Setup/teardown per test |
-| Testing third-party code | Wastes time, not your bug | Mock the boundary |
-| Skipping tests to pass CI | Hides real bugs | Fix or delete the test |
-| Using `test.skip` permanently | Dead code | Remove or fix it |
-| Overly broad assertions | Doesn't catch regressions | Be specific |
-| No async error handling | Swallowed errors, false passes | Always `await` async tests |
+| Testing implementation details | Breaks on refactor even when behavior is unchanged | Test inputs and observable outputs |
+| Flaky tests (timing, order, shared state) | Erode trust; an intermittent RED proves nothing | Deterministic inputs and assertions; isolate state; await async work |
+| Mocking everything | Tests pass while production breaks | Real > fake > stub > mock; mock only at boundaries |
+| Testing third-party code | Wastes time on someone else's bug | Test your code; mock the boundary |
+| Snapshot everything | Large snapshots nobody reviews | Assert specific values; review every snapshot change |
+| Shared mutable state | Tests pass alone, fail together | Setup and teardown per test |
+| Skipping tests to pass CI, or `test.skip` left in | Hides real bugs; dead code | Fix or delete the test |
+| Overly broad assertions | Miss regressions | Assert the specific expected value |
+| No async error handling | Swallowed errors, false passes | Always `await` async work in tests |
