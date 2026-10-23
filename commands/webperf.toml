@@ -1,32 +1,30 @@
 description = "Run a web performance audit via the web-performance-auditor persona"
 
 prompt = """
-/webperf targets web applications specifically. Do not use it for utility libraries, CLIs, or server-only code with no browser-facing output.
+/webperf targets web applications. Do not use it for utility libraries, CLIs, or server-only code with no browser-facing output. This is an audit: do not edit source. Use e6-caveman for the summary.
 
 ## Determine the mode
 
 Deep mode — activate when any of these is available:
-- A Lighthouse JSON report file (e.g. `npx lighthouse <url> --output json --output-path ./report.json`, or `npx -p chrome-devtools-mcp chrome-devtools lighthouse_audit --output-format=json` from the Chrome DevTools MCP CLI)
-- A PageSpeed Insights JSON response (includes Lighthouse + CrUX)
-- A CrUX API response (requires $CRUX_API_KEY or $GOOGLE_API_KEY environment variables — never hard-code these values in config files)
+- A Lighthouse JSON report (e.g. `npx lighthouse <url> --output json --output-path ./report.json`)
+- A PageSpeed Insights JSON response (Lighthouse lab data plus CrUX field data)
+- A CrUX API response (requires `CRUX_API_KEY` or `GOOGLE_API_KEY` in the environment; never hard-code keys)
 - A DevTools performance trace
-- A live URL plus the chrome-devtools MCP server configured in the harness (capture metrics directly via lighthouse_audit and performance_* tools)
-- The Chrome DevTools MCP CLI invoked locally (via `npx -p chrome-devtools-mcp chrome-devtools <tool>`), passing the JSON output to the agent
+- A live URL plus a browser or DevTools capability in the harness that can run Lighthouse or record a trace
 
-Quick mode — default when none of the above are available. Scan source code for structural anti-patterns and label every finding as `potential impact`.
+Quick mode — default otherwise. Scan source code for structural anti-patterns and label every finding `potential impact`.
 
 ## Run the audit
 
-Spawn the `web-performance-auditor` subagent (the CLI exposes each custom subagent in `agents/` as a tool with the same name). Pass it explicitly:
+Spawn the `web-performance-auditor` subagent (the CLI exposes each custom subagent in `agents/` as a tool with the same name). Pass it:
 
 - The files, components, or diff under review
-- Any artifact paths (Lighthouse JSON, PSI JSON, CrUX response, trace) or pasted JSON content
+- Any artifact paths or pasted JSON
 - The target URL or page name when known
-- A note on which mode you expect (Quick or Deep), so the agent surfaces missing inputs if Deep was intended
-
-The subagent returns a scorecard (only populated with sourced values — mark unmeasured fields `not measured`, never fabricate metrics), a ranked list of findings, positive observations, and proactive recommendations.
+- The expected mode, so missing inputs surface if Deep was intended
+- Where to write the full report: the project's report location, or an ignored scratch path when project rules forbid committing reports
 
 ## Output
 
-Return the full audit report to the user. No synthesis or merge step is needed — this is a single-persona command.
+Return a bounded summary: the scorecard (sourced values only; unmeasured fields `not measured`), the top findings with severity and location, blockers, and a link to the full report. Do not paste the full report into the chat. In an active workflow, return to its coordinator.
 """

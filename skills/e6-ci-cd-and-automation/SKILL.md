@@ -7,59 +7,59 @@ description: Use when setting up or modifying CI/CD build and deployment pipelin
 
 ## Overview
 
-Automate repeatable checks and prove failures block the right action. Fast feedback matters, but critical acceptance checks stay on the path to merge and release.
+Automate repeatable checks and prove that failures block the right action. Fast feedback matters, but critical acceptance checks stay on the path to merge and release.
 
 ## When to Use
 
-- Creating or modifying automated build, test, audit, or deployment workflows
-- Diagnosing failed/slow CI, required checks, fork behavior, or rollout automation
-- Release readiness itself belongs to `e6-shipping-and-launch`
+- Creating or modifying automated build, test, audit, or deployment workflows.
+- Diagnosing failed or slow CI, required checks, fork behavior, or rollout automation.
 
-## Workflow Handoff
-
-For a standalone engineering change with no active workflow, load `using-e6-agent-skills` and `../../references/workflow-contract.md`. With an active coordinator, perform this pipeline step, record evidence, and return to that coordinator. Do not restart the lifecycle. Use `e6-caveman` for concise prose and bounded delegation; preserve exact commands, identifiers, and uncertainty.
+**Not for:** the release go/no-go decision → `e6-shipping-and-launch`; a product bug that a CI test exposed → `e6-debugging-and-error-recovery`; choosing the project's quality floor → `e6-constraint-driven-development`.
 
 ## Process
 
-### 1. Discover the Pipeline Contract
+### 1. Discover the pipeline contract
 
-Read project instructions, existing workflows/reusable actions, provider configuration, branch rules, and relevant acceptance criteria. Identify installation/workspace boundary, package manager/lockfile, pinned runtime/tools, scripts, runners, services, and artifacts. Check PR, fork, merge-queue, default-branch, release-tag, and manual-dispatch triggers as applicable.
+Read project instructions, existing workflows and reusable actions, provider configuration, branch rules, and acceptance criteria. Identify the workspace boundary, package manager and lockfile, pinned runtimes, scripts, runners, services, and artifacts. Check PR, fork, merge-queue, default-branch, tag, and manual triggers.
 
-Find which named checks block merge and which environments protect deployments. Record credential availability and session authorization without exposing values. For dependency/install changes, read installation and supply-chain policy in `../../references/security-checklist.md`; do not execute unreviewed dependency scripts to discover them.
+Find which named checks block merge and which environments protect deployments. Record credential availability without exposing values. For dependency changes, follow the install policy in the [security checklist](../../references/security-checklist.md#dependency-security); never run unreviewed install scripts to discover them.
 
-### 2. Map Acceptance to Gates
+### 2. Map acceptance to gates
 
-Select applicable formatting/lint, type, focused/unit, integration, build, critical user-flow E2E, security audit, and performance/bundle checks. Record reasons for N/A gates; do not add TypeScript or a build script to plain JavaScript merely to match a template.
+Select applicable lint, type, unit, integration, build, critical end-to-end, security audit, and performance checks. Record why a gate is N/A; do not add tooling merely to match a template.
 
-Map critical acceptance criteria to required stages, including edge/error paths and flag states. UI journeys need relevant browser tests; desktop journeys need actual runtime capability. E2E is required when it proves behavior earlier stages cannot cover. Use actual scripts and frozen/immutable install supported by the pinned manager.
+Map critical acceptance criteria, including error paths and flag states, to required stages. UI journeys need browser tests where earlier stages cannot prove the behavior. Use the actual scripts and a frozen install for the pinned manager.
 
-Run cheap feedback early; independent jobs may run in parallel. Deployment depends on every applicable required gate. Do not hide failures with `continue-on-error`, skipped tests, or broad fallbacks. Missing evidence is not success.
+Run cheap feedback early and independent jobs in parallel. Deployment depends on every applicable required gate. Do not hide failures with `continue-on-error`, skipped tests, or broad fallbacks; missing evidence is not success.
 
-### 3. Configure Trust and Deployment
+### 3. Configure trust and deployment
 
-Run untrusted PR checks without deployment/production secrets. Use non-sensitive disposable credentials for isolated test databases; fork checks must not depend on repository secrets. Wait for service readiness, apply test migrations, and separate test resources from production.
+- **Permissions:** set top-level `permissions: contents: read` and elevate per job only where needed.
+- **Actions:** pin third-party actions to a full commit SHA, not a tag.
+- **Credentials:** use OIDC workload identity for cloud deploys and package publishing instead of long-lived secrets. Publish artifact attestations or provenance where the platform supports it.
+- **Untrusted triggers:** PR and fork checks run without deployment secrets; disposable test services use non-sensitive credentials. Never run PR-controlled code with secrets via `pull_request_target`. Do not let untrusted runs write caches that trusted runs restore (cache poisoning).
+- **LLM or agent steps** that read issue, PR, or comment text get no secrets or write tokens unless the trigger is trusted.
+- **Injection:** pass workflow inputs through environment variables before shell use, validate them against known formats, and quote arguments. Never put secret values in command text or logs.
 
-Use least-privilege workflow permissions. Keep privileged deployment jobs on trusted refs/protected environments, with project-required approvals and scoped credentials or workload identity. Never execute PR-controlled code with secrets through `pull_request_target`. Preview deployments need an explicit trust policy; report unsupported privileged previews instead of weakening it.
+Keep privileged deploy jobs on protected refs and environments with the project's required approvals. Serialize production deploys. Build once and promote the same immutable artifact, recording revision, artifact ID, version, and target. Rollback redeploys a known compatible artifact; schema and data recovery follows `e6-deprecation-and-migration`.
 
-Put workflow inputs/expressions into environment variables before shell use. Validate deployment IDs/versions against the provider's format or known artifact set and quote arguments. Direct interpolation of `inputs.version` into shell can become command execution. Do not place secret values directly in shell command text or logs.
+### 4. Verify actual pipeline behavior
 
-Serialize production changes with deployment concurrency policy. Build once and promote the same immutable artifact where supported; record revision, artifact ID, version, and target. A rollback job redeploys a known compatible artifact with verified provider tooling. Schema/data recovery follows `e6-deprecation-and-migration`; Git reverts/flags cannot restore data.
+Validate workflow syntax with project tools. Run the equivalent install, check, and build commands locally in a matching environment. When packaging, deploy configuration, or runtime setup changes, start the app and exercise affected flows; compilation does not prove deployment.
 
-### 4. Verify Actual Pipeline Behavior
+Prove each new gate fails when it should: locally, or on a throwaway branch only when pushing is authorized. Observe a fresh CI run when available, confirm failed builds cannot deploy, and check that branch rules require the actual status names. Without provider access, list the exact settings and mark the gate `UNVERIFIED`.
 
-Validate workflow syntax/expressions using project tools. Run equivalent install/check/build commands locally in the matching environment. Start the app and exercise affected acceptance flows when changing packaging, deploy configuration, or runtime setup; compilation does not prove deployment works.
+Fetch failing job logs directly as scoped, redacted excerpts; do not ask the user to paste logs the tools can retrieve. Reproduce failures with `e6-debugging-and-error-recovery`, review autofix diffs, and observe the fresh result.
 
-Observe a fresh candidate CI run when available. Verify expected triggers, successful artifacts, a deliberately failing gate in a safe test branch/local runner, and dependencies preventing failed builds from deploying. Check actual branch rules require the correct status names. Remote settings need API/provider evidence; without access, leave exact settings and mark the gate unverified.
+### 5. Optimize
 
-Inspect current run/job logs directly with scoped redacted excerpts. Reproduce failures locally using `e6-debugging-and-error-recovery`; review autofix diffs before committing. Rerun failed and affected gates, then observe the fresh result under existing push authorization. Do not require the user to paste logs when tools can retrieve them.
+Measure the slow stage first. Key dependency caches on the authoritative lockfile; cache downloads, not `node_modules`. Shard tests and parallelize independent jobs. Path filters need dependency-aware coverage and an always-reported required aggregate check.
 
-### 5. Optimize and Hand Off
+Keep critical acceptance tests required even when slow; scheduled suites only supplement them. Fix flakiness instead of rerunning until green. Use Dependabot or Renovate within project policy, and assign an owner for restoring a broken main build.
 
-Measure the slow stage first. Cache dependency downloads with authoritative lockfile keys; `setup-node` caches package-manager downloads, not `node_modules`. Parallelize independent jobs and shard tests. Path filters need dependency-aware coverage and an always-reported required aggregate check; skipped workflows must not leave merges waiting forever.
+## Workflow Handoff
 
-Keep critical acceptance tests required even when slow. Scheduled suites supplement required checks for nonblocking coverage under a stated policy. Fix flakiness instead of rerunning until green. Ten minutes is a useful target, not permission to remove correctness gates.
-
-Use Dependabot/Renovate within project policy and assign ownership for restoring broken main builds. Hand artifact/run IDs, outcomes, staging evidence, remaining gates, and recovery readiness to `e6-shipping-and-launch`. That skill owns launch thresholds/windows; CI cannot declare release complete after an arbitrary quiet interval.
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Hand run and artifact IDs, gate outcomes, and recovery readiness to `e6-shipping-and-launch`, which owns launch thresholds and windows.
 
 ## Common Rationalizations
 
@@ -67,24 +67,22 @@ Use Dependabot/Renovate within project policy and assign ownership for restoring
 |---|---|
 | "Copy the Node template" | Discover manager, scripts, and services first. |
 | "Fork checks need secrets" | Disposable test services can use non-sensitive credentials. |
-| "Workflow exists, merge is blocked" | Verify branch rules require the actual check names. |
-| "Move slow checkout tests to nightly" | Speed cannot remove the only critical acceptance proof. |
+| "The workflow exists, so merge is blocked" | Verify branch rules require the actual check names. |
+| "A version tag is pinned enough" | Tags move; pin a full commit SHA. |
 | "Just rerun the flaky job" | Investigate and prove the fix with a fresh run. |
 
 ## Red Flags
 
-- Gates absent, silently skipped, or unrelated to acceptance criteria
-- PR-controlled code using deployment credentials
-- Shell interpolation of inputs or printed secrets
-- Green YAML without local execution/current run/required-check evidence
-- Rebuilt artifacts promoted as identical or untested recovery automation
+- Gates absent, silently skipped, or unrelated to acceptance criteria.
+- PR-controlled code or LLM steps holding deployment credentials or write tokens.
+- Write-all default permissions, tag-pinned third-party actions, long-lived cloud keys.
+- Shell interpolation of inputs or printed secrets.
+- Green YAML without local execution, a current run, or a proven failing gate.
 
 ## Verification
 
-- [ ] Project tooling/triggers and acceptance-to-gate mapping are recorded
-- [ ] Workflow validation and equivalent local commands ran; changed runtime setup works
-- [ ] Current run shows checks pass and failures block downstream actions
-- [ ] Required check names match verified branch rules, or exact unverified setup is reported
-- [ ] Fork checks are secretless; deploy trust/permissions/approvals/concurrency follow policy
-- [ ] Artifact identity and compatible rollback/recovery are verified before deployment
-- [ ] Coordinator receives exact outcomes, run/artifact IDs, and remaining gates
+- [ ] Triggers and the acceptance-to-gate mapping recorded.
+- [ ] Workflow validated and equivalent local commands ran; each new gate shown to fail.
+- [ ] Required check names match verified branch rules, or the exact unverified setup is reported.
+- [ ] Read-only default permissions, SHA-pinned actions, and OIDC where supported.
+- [ ] Untrusted triggers are secretless; artifact identity and rollback verified before deployment.

@@ -6,7 +6,7 @@ Shared checklists (threat modeling, pre-commit checks, security headers, CORS, t
 
 ## OWASP Top 10 Prevention Patterns
 
-These are prevention patterns, not a ranking. For the 2021 ordering, see the quick-reference table in `../../../references/security-checklist.md#owasp-top-10-quick-reference`.
+These are prevention patterns, not a ranking. For the OWASP Top 10:2025 categories, see the quick-reference table in `../../../references/security-checklist.md#owasp-top-10-quick-reference`. In the 2025 list, SSRF falls under A01 Broken Access Control, sensitive data exposure under A04 Cryptographic Failures, and dependency risk under A03 Software Supply Chain Failures.
 
 ### Injection
 
@@ -21,7 +21,7 @@ const user = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
 const user = await prisma.user.findUnique({ where: { id: userId } });
 ```
 
-### Broken Authentication
+### Authentication Failures
 
 ```typescript
 // Password hashing

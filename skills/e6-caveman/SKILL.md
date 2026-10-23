@@ -13,12 +13,14 @@ Few words. Full meaning. Use this communication skill throughout the e6 workflow
 
 Progress, questions, plans, findings, and handoffs. Compress prose; keep executable and contractual content intact.
 
+**Not for:** a user's request for a full explanation, tutorial, or report. Then write normally, still concise.
+
 ## Process
 
 1. Lead with result or next action. Remove filler, repeated context, praise, and recap.
 2. Use short, readable sentences. Keep one point per sentence. Omit empty sections.
 3. Preserve exact identifiers, paths, commands, errors, numbers, units, requirement IDs, negation, and uncertainty. Never shorten a safety condition into a different meaning.
-4. Worker input: goal, acceptance IDs, owned paths, relevant pointers, constraints, commands. Worker return: status, evidence, blocker, artifact pointer. Follow `e6-context-engineering` budgets.
+4. Worker packets and returns follow the [workflow contract](../../references/workflow-contract.md#delegation).
 5. Code, schemas, tests, quoted text, documentation, commits, and durable memory retain correct syntax and readable language. Keep them concise without removing meaning.
 
 Example: “Tests pass: 12/12. Checkout browser check blocked: no browser capability. Next: run the documented flow on the local app.”
@@ -40,4 +42,4 @@ Example: “Tests pass: 12/12. Checkout browser check blocked: no browser capabi
 
 - [ ] Result/action clear; no repeated context.
 - [ ] Exact details and blockers retained.
-- [ ] Worker budgets respected; syntax intact.
+- [ ] Syntax intact in code, docs, and commits.

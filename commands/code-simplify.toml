@@ -1,22 +1,11 @@
 description = "Simplify code for clarity and maintainability — reduce complexity without changing behavior"
 
 prompt = """
-Invoke the e6-code-simplification skill.
+Use e6-code-simplification with e6-caveman. Simplify recently changed code, or the specified scope, without changing observable behavior. Return evidence to the caller: the coordinator in an active workflow, otherwise the user.
 
-Simplify recently changed code (or the specified scope) while preserving exact behavior:
+Read project rules and conventions, the target code, its callers and contracts, and its tests. Run the focused baseline tests before editing; report a baseline failure instead of attributing it to the refactor. Add characterization tests for uncovered caller-visible behavior. Never edit inside `simplify-ignore` blocks.
 
-1. Read AGENTS.md and study project conventions
-2. Identify the target code — recent changes unless a broader scope is specified
-3. Understand the code's purpose, callers, edge cases, and test coverage before touching it
-4. Scan for simplification opportunities:
-   - Deep nesting → guard clauses or extracted helpers
-   - Long functions → split by responsibility
-   - Nested ternaries → if/else or switch
-   - Generic names → descriptive names
-   - Duplicated logic → shared functions
-   - Dead code → remove after confirming
-5. Apply each simplification incrementally — run tests after each change
-6. Verify all tests pass, the build succeeds, and the diff is clean
+Apply one simplification at a time (guard clauses for deep nesting, splitting mixed responsibilities, clearer names, reusing the canonical helper, removing proven dead code or generated boilerplate) and rerun focused checks after each. Revert any change that fails or only relocates complexity. Then run the required build and lint gates, exercise the affected runtime path, and review the diff with e6-code-review-and-quality.
 
-If tests fail after a simplification, revert that change and reconsider. Use `e6-code-review-and-quality` to review the result.
+Report baseline and final results, runtime evidence, and anything unverified.
 """

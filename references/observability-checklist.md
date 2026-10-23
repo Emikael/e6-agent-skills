@@ -52,13 +52,14 @@ Telemetry without a question is noise. Before instrumenting anything:
 - [ ] Manual spans only around meaningful internal units of work, with the attributes on-call will filter by
 - [ ] No secrets or PII as span attributes
 - [ ] Sampling strategy explicit: head sampling drops traces before a collector can inspect them; retaining every error with tail sampling requires all relevant spans reach that collector
+- [ ] LLM calls: one span per model call with model, input/output token counts, latency, and finish reason (OpenTelemetry `gen_ai.*` semantic conventions); no raw prompts or outputs containing user data
 
 ## Alerting
 
 - [ ] Every alert is symptom-based (error rate, p99 latency, queue age) — causes (CPU, disk, restarts) go to dashboards, not pagers
 - [ ] Every alert is actionable; "ignore it, it self-heals" alerts are deleted
 - [ ] Every alert links to a runbook — minimum three lines: what it means, first query to run, escalation path
-- [ ] Thresholds and durations justified by an SLO or historical data, not guesses
+- [ ] Thresholds and durations justified by an SLO or historical data, not guesses; where an SLO exists, prefer multi-window error-budget burn-rate alerts
 - [ ] Two severities only: **page** (user-facing, act now) and **ticket** (degradation, act this week)
 - [ ] Each new alert test-fired to an authorized test receiver; notification and runbook verified; changed thresholds/configuration restored
 - [ ] No alerts that fire daily and get acknowledged without action
