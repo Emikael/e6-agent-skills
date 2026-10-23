@@ -47,6 +47,7 @@ Before adding a new skill or significantly reworking an existing one, run the pr
 - Tests: `node --test scripts/*test.js scripts/lib/*test.js`
 - Validate: `node scripts/validate-skills.js`, reference/command/artifact/version validators
 - Activation: `bash hooks/session-start-test.sh`, installer tests
+- Portable skills: `node scripts/build-portable-skills.js --out <dir> [--zip]` — self-contained skill folders/ZIPs for single-folder hosts
 - Evals: `node scripts/run-evals.js` — trigger/routing evals for every skill (CI); `--behavioral <skill>` for graded runs
 
 ## Pull Requests

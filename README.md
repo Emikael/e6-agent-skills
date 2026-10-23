@@ -8,7 +8,29 @@
 
 **Workflow:** Understand → Plan → Build → Verify → Review → Handoff.
 
-Implementation requests continue through the applicable phases within existing authorization. Plan-only, review-only, and test-only requests keep their scope. Commits and releases follow user authorization and project rules. See the [workflow contract](references/workflow-contract.md).
+Implementation requests continue through the applicable phases within existing authorization. Plan-only, review-only, and test-only requests keep their scope. Plan mode or a request to approve first stops for your approval. Project rules (`AGENTS.md`, `CLAUDE.md`, …) override pack defaults for artifact locations, local check scope, and browser consent. Commits and releases follow user authorization and project rules. See the [workflow contract](references/workflow-contract.md).
+
+**New in this revision:**
+- The coordinator classifies each request: question, trivial fast path, bug, feature, refactor, review, test, plan, CI/incident, or release.
+- The workflow contract is the single home for scales, artifacts, delegation, and handoff.
+- Every skill was revised.
+- New install paths for Claude Desktop/claude.ai, Grok Build, the Cursor plugin, and the Codex app.
+
+See the [improvement report](docs/skill-improvement-report.md).
+
+## Best Way to Use
+
+1. **Install for the whole workflow**, not just the skills: the Claude Code or Cursor plugin, or skills plus the one-command bootstrap rule. See [host setup](#quick-start).
+2. **Describe the outcome, scope, authorization, and "done when"** in one request. The coordinator announces each phase (`Using <skill> for <purpose>.`) and runs criteria → failing test → implementation → local runtime → review → handoff.
+3. **Pick the mode:**
+   - Ask plainly for medium work.
+   - Use `/spec` → `/plan` → `/build auto` to steer large work.
+   - Say "plan first, wait for approval" when you want a gate.
+   - Small fixes take the fast path automatically.
+4. **Put team rules in project files**, not prompts: where plans may live, which checks run locally, what needs consent. The agent records and follows them.
+5. **Keep one router.** Borrow individual skills from other packs; don't stack coordinators.
+
+Read the [usage guide](docs/usage-guide.md). For a worked, copy-ready prompt on a real multi-surface repository, see the [E6 Code feature prompt](docs/prompts/e6code-feature-prompt.md).
 
 ---
 
@@ -30,7 +52,7 @@ Nine lifecycle command wrappers are provided for Claude Code and Gemini CLI. Oth
 
 Want the whole workflow from one request? Install the complete pack and [activate the coordinator](docs/workflow-activation.md). `using-e6-agent-skills` gathers context, defines criteria, plans, builds with tests, runs locally, reviews, and hands off. `/build auto` completes the whole requested plan using existing authorization; commits and releases follow project rules and user scope.
 
-See the [SDLC workflow change report](docs/sdlc-workflow-report.md) for the audit, implemented improvements, and verification limits.
+See the [improvement report](docs/skill-improvement-report.md) for this revision, and the earlier [SDLC workflow change report](docs/sdlc-workflow-report.md) for the first audit.
 
 The Claude plugin registers a compact startup bootstrap. Other hosts can use the idempotent project-rule installer. Native skill selection remains available; activation and model compliance need behavioral verification.
 
@@ -53,6 +75,13 @@ node e6-agent-skills/scripts/install-workflow-bootstrap.js \
 ```
 
 Node.js is required for the installer and repository checks. The Claude startup hook uses Bash. See the [activation guide](docs/workflow-activation.md) for host-specific wiring and upgrade checks.
+
+**Self-contained skills for any skills folder:** build portable copies that carry the shared checklists they link to. This works for `.cursor/skills`, `.agents/skills`, `.grok/skills`, and other skills folders, or produces one ZIP per skill for claude.ai and Claude Desktop uploads:
+
+```bash
+node e6-agent-skills/scripts/build-portable-skills.js --out /path/to/project/.agents/skills
+node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip
+```
 
 **Skill-only installation:** the open [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Cursor, Codex, Copilot, and other agents:
 
@@ -113,9 +142,43 @@ claude --plugin-dir ./e6-agent-skills
 </details>
 
 <details>
+<summary><b>Claude Desktop and claude.ai</b></summary>
+
+- **Claude Code in the Desktop app's Code tab:** use the plugin above.
+- **Claude apps (claude.ai chat, Desktop chat, Cowork):** enable code execution, build one ZIP per skill, and upload each under Customize > Skills:
+
+  ```bash
+  node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip
+  ```
+
+The apps run no hooks or slash commands, so ask for the e6 workflow by name or put the bootstrap in a Project's instructions. See [docs/claude-desktop-setup.md](docs/claude-desktop-setup.md).
+
+</details>
+
+<details>
 <summary><b>Cursor</b></summary>
 
-Put discovered skills under `.cursor/skills/` and a compact coordinator policy in `.cursor/rules/*.mdc`. Keep the complete pack accessible for shared references and helpers. See [docs/cursor-setup.md](docs/cursor-setup.md).
+Choose one of three routes:
+- **Plugin (local):** link a clone into `~/.cursor/plugins/local/`. The `.cursor-plugin` manifest exposes the skills and a `sessionStart` bootstrap.
+- **Skills:** build portable skills into `.cursor/skills/`, then add the always-applied rule with `install-workflow-bootstrap.js --host cursor`.
+- **Rule only:** add the rule and point it at a full clone.
+
+See [docs/cursor-setup.md](docs/cursor-setup.md).
+
+</details>
+
+<details>
+<summary><b>Grok Build</b></summary>
+
+Build portable skills into `.grok/skills/` or `~/.grok/skills/`, then add the `AGENTS.md` bootstrap:
+
+```bash
+node e6-agent-skills/scripts/build-portable-skills.js --out ~/.grok/skills
+node e6-agent-skills/scripts/install-workflow-bootstrap.js \
+  --project /path/to/project --pack ./e6-agent-skills --host grok --write
+```
+
+Confirm with `grok inspect`. See [docs/grok-build-setup.md](docs/grok-build-setup.md).
 
 </details>
 
@@ -168,7 +231,7 @@ Add a compact coordinator rule pointing to the complete pack. Load skill bodies 
 <details>
 <summary><b>OpenCode</b></summary>
 
-Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. Optional slash commands can be added under `.opencode/commands/`.
+Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. No OpenCode command wrappers ship with the pack; you can author your own under `.opencode/commands/`.
 
 See [docs/opencode-setup.md](docs/opencode-setup.md).
 
@@ -198,7 +261,7 @@ codex plugin marketplace add Emikael/e6-agent-skills
 codex plugin add e6-agent-skills@e6-agent-skills
 ```
 
-The first command registers the marketplace; the second installs the plugin. Codex reads the root `skills/` directory through `.codex-plugin/plugin.json`. Start a new session and select a skill from the host's picker. In the CLI, explicit skill mentions use `$`; plugin skills are namespaced, for example `$e6-agent-skills:using-e6-agent-skills`. Add the compact project bootstrap for whole-workflow requests. See [docs/codex-setup.md](docs/codex-setup.md).
+The first command registers the marketplace; the second installs the plugin. The Codex app then lists it under **Plugins**. Codex reads the root `skills/` directory through `.codex-plugin/plugin.json`. Start a new session and select a skill from the host's picker. In the CLI, explicit skill mentions use `$`; plugin skills are namespaced, for example `$e6-agent-skills:using-e6-agent-skills`. Add the compact project bootstrap for whole-workflow requests. See [docs/codex-setup.md](docs/codex-setup.md).
 
 </details>
 
@@ -323,14 +386,14 @@ Quick-reference material that skills pull in when needed:
 | Reference | Covers |
 |-----------|--------|
 | [workflow-bootstrap.md](references/workflow-bootstrap.md) | Compact host/project policy selecting the coordinator and concise communication |
-| [workflow-contract.md](references/workflow-contract.md) | Phase gates, scope, acceptance tests, runtime/computer checks, delegation, and learning |
+| [workflow-contract.md](references/workflow-contract.md) | Scope, plan mode, project overrides, fast path, phase gates, glossary and severity scales, artifacts and state template, tests, runtime checks, delegation, handoff |
 | [definition-of-done.md](references/definition-of-done.md) | Standing project bar applied alongside each task's acceptance criteria |
 | [testing-patterns.md](references/testing-patterns.md) | Test structure, naming, mocking, React/API/E2E examples, anti-patterns (JavaScript/TypeScript) |
 | [security-checklist.md](references/security-checklist.md) | Pre-commit checks, auth, input validation, headers, CORS, OWASP Top 10 |
 | [performance-checklist.md](references/performance-checklist.md) | Core Web Vitals targets, frontend/backend checklists, measurement commands |
 | [accessibility-checklist.md](references/accessibility-checklist.md) | Keyboard nav, screen readers, visual design, ARIA, testing tools |
 | [observability-checklist.md](references/observability-checklist.md) | On-call questions, structured logging, RED/USE metrics, tracing, symptom-based alerting, pre-launch gate |
-| [orchestration-patterns.md](references/orchestration-patterns.md) | One coordinator, independent bounded workers, sequential fallback, and ownership |
+| [orchestration-patterns.md](references/orchestration-patterns.md) | One coordinator, independent bounded workers, high-risk review fan-out, sequential fallback, and ownership |
 
 ---
 
@@ -392,9 +455,10 @@ The portable core stays in shared directories. Host-specific paths are native di
 | Claude Code adapter | `.claude/commands/` (9 commands), `.claude-plugin/`, `hooks/` | Slash-command wrappers, marketplace metadata, and lifecycle hooks |
 | Gemini CLI adapter | `.gemini/commands/` (9 commands) | Gemini-native TOML command wrappers |
 | Antigravity CLI adapter | `commands/` (9 commands), `plugin.json` | Legacy TOML wrappers and the root plugin manifest; see the [known wrapper limitation](docs/antigravity-setup.md#lifecycle-workflows-and-command-compatibility) |
-| Codex adapter | `.codex-plugin/`, `.agents/plugins/` | Codex plugin metadata and marketplace registration; Codex consumes `skills/` directly |
+| Codex adapter | `.codex-plugin/`, `.agents/plugins/` | Codex plugin metadata and marketplace registration for the CLI and app; Codex consumes `skills/` directly |
+| Cursor adapter | `.cursor-plugin/`, `hooks/hooks-cursor.json` | Cursor plugin manifest and `sessionStart` bootstrap (same script as Claude) |
 | GitHub Copilot CLI adapter | `plugin.json` | Root plugin metadata; Copilot CLI discovers `skills/` by convention and does not register the lifecycle wrappers |
-| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, installation, routing evals, and CI |
+| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, bootstrap installer, portable skill builder, routing evals, and CI |
 | Documentation | `docs/` | Universal guidance and per-tool setup guides |
 
 Tools without a checked-in adapter directory install or copy the shared `skills/` core into their own native location. The [Quick Start](#quick-start) links the setup guide for each supported host.
@@ -413,7 +477,7 @@ Skills bake in best practices from Google's engineering culture — including co
 
 ## How it compares
 
-See the [workflow design sources](docs/workflow-design-sources.md) for patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses. The [comparison guide](docs/comparison.md) provides background on other skill packs; its external single-task experiment does not measure these latest changes.
+See the [workflow design sources](docs/workflow-design-sources.md) for patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses. The [comparison guide](docs/comparison.md) provides background on other skill packs. It includes a side-by-side of this pack's coordinator and Superpowers' `using-superpowers` entry skill. Its external single-task experiment does not measure these latest changes.
 
 ---
 

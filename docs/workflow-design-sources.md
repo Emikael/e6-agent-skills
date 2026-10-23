@@ -9,6 +9,7 @@ e6's design. They do not establish that the changes improve agent behavior.
 | [i-have-adhd](https://github.com/ayghri/i-have-adhd/blob/839872f9d1cd634fed642b4589ce7226199cc15f/skills/i-have-adhd/SKILL.md) | `839872f9d1cd634fed642b4589ce7226199cc15f`, 2026-09-19 | [MIT](https://github.com/ayghri/i-have-adhd/blob/839872f9d1cd634fed642b4589ce7226199cc15f/LICENSE), Ayoub Ghriss |
 | [Compound Engineering](https://github.com/everyinc/compound-engineering-plugin/blob/7ee6e7017184ed955d15336e4da88a42e0bb4136/skills/ce-work/SKILL.md) | `7ee6e7017184ed955d15336e4da88a42e0bb4136`, 2026-10-01 | [MIT](https://github.com/everyinc/compound-engineering-plugin/blob/7ee6e7017184ed955d15336e4da88a42e0bb4136/LICENSE), Every |
 | [Superpowers](https://github.com/obra/superpowers/blob/8ca22dba9a94f28898bbce59f2537ff4d87c747d/skills/writing-skills/SKILL.md) | `8ca22dba9a94f28898bbce59f2537ff4d87c747d`, 2026-09-25 | [MIT](https://github.com/obra/superpowers/blob/8ca22dba9a94f28898bbce59f2537ff4d87c747d/LICENSE), Jesse Vincent |
+| [Superpowers `using-superpowers`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/using-superpowers/SKILL.md) | `2ce8aa15d05bd57213e6f746f953aafb7ded7a8b`, 2026-10-21 | [MIT](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE), Jesse Vincent |
 | [Caveman](https://github.com/JuliusBrussee/caveman/blob/f5d729488caa8f6a5b6c8086fe2cccd3e8a63f91/skills/caveman/SKILL.md) | `f5d729488caa8f6a5b6c8086fe2cccd3e8a63f91`, 2026-10-01 | [Apache-2.0](https://github.com/JuliusBrussee/caveman/blob/f5d729488caa8f6a5b6c8086fe2cccd3e8a63f91/LICENSE), Julius Brussee |
 
 ## Patterns adopted and adapted
@@ -35,6 +36,14 @@ e6's design. They do not establish that the changes improve agent behavior.
   Adapt routing to the requested deliverable and active coordinator. Small
   documentation changes need appropriate validation, not invented behavior tests;
   authorized continuation does not require fresh approval at every phase.
+- **Superpowers `using-superpowers` (second pass):** adopt a one-line
+  announcement when a skill starts, a classification step before the first
+  action, an explicit rule that dispatched workers do not load the entry skill
+  (its `SUBAGENT-STOP`), and its Cursor `sessionStart` hook output
+  (`additional_context` when `CURSOR_PLUGIN_ROOT` is set). Do not adopt the
+  "1% chance" hard gate, full-body session injection, or mandatory design
+  approval; e6 keeps a compact bootstrap and honors approval only when the host
+  or user asks for it. See the [comparison](comparison.md#coordinator-vs-bootstrap-using-e6-agent-skills-and-superpowersusing-superpowers).
 - **Caveman:** adopt short readable prose, exact technical details, preserved
   negation, and clarity when compression could change meaning. Adapt blanket
   hedging removal to retain real uncertainty, and retain harness-required progress
