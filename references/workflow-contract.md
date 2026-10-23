@@ -23,8 +23,8 @@ Read project rules (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md
 
 - **Artifact locations.** If the project forbids committing plans or agent notes, keep spec, plan, and state in an ignored/scratch location or the owning tracker. Never commit them.
 - **Check scope.** If the project limits local suites (“focused tests only; CI runs the rest”), run what it allows and state what CI must still prove.
-- **Consent-gated checks.** If browser/computer use, simulators, or services need consent, ask once and early, batched with other Open decisions, and continue other work. The check stays `blocked` until consent arrives.
-- **Project procedures.** A repository's own skills or runbooks (for example a `test-*` skill) replace the generic procedure for the same check.
+- **Consent-gated checks.** If a required check (browser/computer use, simulators, services) needs consent, request it explicitly in your first message, as a direct question batched with other Open decisions, not as an optional aside. Continue other work meanwhile. The check stays `blocked` until consent arrives.
+- **Project procedures.** A repository's own skills or runbooks (for example a `test-*` skill) replace the generic procedure for the same check. Consent rules still apply when that procedure drives a browser, device, or service.
 
 Record each override in the workflow state.
 
