@@ -6,7 +6,7 @@ Use one workflow coordinator. `using-e6-agent-skills` advances applicable phases
 
 | Work | Pattern | Evidence returned |
 |---|---|---|
-| Small or dependent task | Coordinator performs steps directly | Acceptance/check/runtime outcomes |
+| Small or dependent task | Coordinator performs steps directly | Criterion/check/runtime outcomes |
 | Independent read-heavy investigations | Scoped parallel workers | Decisive findings and source pointers |
 | Independent edits with settled contracts | Disjoint worker paths; coordinator integrates | Changed paths, criteria, checks, blockers |
 | Material uncertain decision | Bounded independent review via doubt skill | Violated contract and counter-evidence |
@@ -16,13 +16,11 @@ A sequential lifecycle is valid inside the coordinator. It does not need a separ
 
 ## Worker Contract
 
-Use `e6-caveman` and `e6-context-engineering`. Target 500 words of input and 200 words of output. Preserve correctness-critical contracts; explain overruns rather than silently dropping them.
+Packets, returns, ownership, and worktree isolation follow the [workflow contract](workflow-contract.md#delegation). A worker reports results; the coordinator decides next steps and verifies integrated behavior. Detailed logs belong in artifacts. Shared contracts, fixtures, migrations, and integrated verification need coordination before parallel writes. Bound retries and review loops by concrete unresolved issues; routine tasks need no fan-out.
 
-Input: goal, acceptance IDs/scenarios, owned writable paths, read-only source/diff/reference pointers, constraints, dependencies, real commands/cwd, deliverable. Prefer fresh context if supported. Do not repeat full history or copy full specs.
+### High-Risk Review Fan-Out
 
-Output: status, path:line evidence, commands actually run/outcomes, blockers, artifact pointer. A worker reports results; the coordinator decides next steps and verifies integrated behavior. Detailed logs belong in artifacts.
-
-One owner per writable path. Shared contracts, fixtures, migrations, and integrated verification need coordination before parallel writes. Workers do not spawn other workers by default. Bound retries and review loops by concrete unresolved issues; routine tasks need no fan-out.
+For diffs touching auth, persisted data, payments, public APIs, or migrations, the Review phase may run `code-reviewer`, `security-auditor`, and `test-engineer` in parallel on the same scoped diff. Each returns findings on the contract's severity scale. The coordinator deduplicates by location and failure scenario, re-reads the code for each Critical/Required finding, and resolves conflicts by evidence. Run passes sequentially when parallel workers are unavailable, and say so.
 
 ## Host Adaptation
 

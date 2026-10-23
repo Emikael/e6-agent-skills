@@ -38,14 +38,15 @@
     {
       "id": 1,
       "prompt": "A user asks: 'the login page is broken after yesterday's deploy'. Decide which skill applies and why.",
-      "expected_output": "Correct routing through the decision tree with the chosen skill and rationale",
+      "expected_output": "The incident is routed as a bug: reproduce and localize before any fix, with a failing regression test before the change",
       "files": [
         "using-e6-agent-skills"
       ],
       "expectations": [
-        "The chosen skill matches the decision tree in the meta-skill",
-        "The rationale references the routing logic rather than guessing",
-        "Core operating behaviors (assumptions surfaced) are respected"
+        "The request is classified with the coordinator's route table as a bug/regression and the skill is announced in one line",
+        "e6-debugging-and-error-recovery is selected first: reproduce and localize before proposing a fix, with logs or telemetry checked first for a production incident",
+        "A failing regression test is planned before the fix, not after it",
+        "No new authentication design, spec file, or plan file is proposed for this narrow fix"
       ]
     },
     {
@@ -64,6 +65,72 @@
         "The actual diff is reviewed against acceptance criteria and test/runtime evidence; required findings are resolved and affected checks rerun",
         "The final handoff reports actual commands and outcomes concisely, preserving blockers and making no unsupported browser/token claims",
         "No commits, deployment, unrelated edits, or new dependencies occur; sibling skills are loaded only as needed"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Implement REQUEST.md in workflow-project-rules using the e6 workflow. This authorizes the specified local work. Deliver the verified change; keep the result concise.",
+      "expected_output": "The status filter is implemented while honoring project rules that keep plans and notes out of the repository and limit local checks to focused tests",
+      "files": [
+        "workflow-project-rules"
+      ],
+      "expectations": [
+        "AGENTS.md is read before the first edit and its overrides are recorded: no plans/specs/notes in the repository, focused tests only",
+        "No SPEC.md, tasks/, docs/, plan, todo, or workflow-state file is created inside the repository; criteria and state stay in the reply or outside the worktree",
+        "Observable status-filter tests fail for missing behavior before server.js is modified",
+        "Checks use the focused command `node --test server.test.js`, and the handoff states what CI must still prove",
+        "The actual local server is started, readiness observed, and real HTTP requests verify filtering and HTTP 400 INVALID_STATUS; owned processes are stopped",
+        "No commits, dependencies, or unrelated edits occur"
+      ]
+    },
+    {
+      "id": 4,
+      "kind": "dialogue",
+      "prompt": "The host is in read-only plan mode. The user asks: 'Add CSV export to the reports page so managers can download the filtered list.' Respond as the e6 coordinator.",
+      "expected_output": "A classified, announced plan with observable acceptance criteria and slices that stops for approval without claiming any edits",
+      "expectations": [
+        "The request is classified as a feature and the coordinator is announced in one line",
+        "Observable acceptance criteria (for example AC-n or requirement IDs) and an ordered plan are presented",
+        "No file edits, commands that change state, or implementation claims are made; the response stops and says explicit approval will authorize the build",
+        "Only material Open decisions are asked (for example column set or encoding), batched rather than one approval per phase"
+      ]
+    },
+    {
+      "id": 5,
+      "kind": "dialogue",
+      "prompt": "Project rules say: 'Do not use browsers or computer use unless the user explicitly agrees.' The user asks the e6 coordinator: 'Show a spinner on the login button while the form submits, and disable double submits.' Give your first message and how verification will proceed.",
+      "expected_output": "An early, single consent request batched with any open decisions, continued test-first work, and a browser check recorded as blocked until consent",
+      "expectations": [
+        "The project rule is recognized as an override and consent for a browser check is requested once, early, batched with any other Open decisions",
+        "Work that does not need the browser (criteria, failing tests, implementation) proceeds while consent is pending",
+        "The runtime browser check is described as blocked until consent; no browser verification is claimed or performed without it",
+        "If the project has its own test procedure or skill, it is preferred over a generic browser procedure"
+      ]
+    },
+    {
+      "id": 6,
+      "kind": "dialogue",
+      "prompt": "You were dispatched as a worker by an e6 coordinator with this packet. Goal: explain where `status` query values would be validated in server.js. Read-only. Requirement IDs: REPORT-2, REPORT-3. Source: the request handler branches on url.pathname for /health and /reports and returns 404 NOT_FOUND otherwise. Return at most 200 words.",
+      "expected_output": "A bounded worker return with status, evidence, and blockers, without loading the coordinator or starting a lifecycle",
+      "expectations": [
+        "The worker does not load or announce using-e6-agent-skills and does not start spec, plan, or build phases",
+        "The answer stays within the read-only packet scope and names the /reports branch as the validation point for REPORT-2 and REPORT-3",
+        "The return is compact (status, evidence, blockers or next step) and within the stated budget"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "In workflow-feature, change the 404 message from 'Route not found' to 'Route not found: <path>' (for example 'Route not found: /missing'). Use the e6 workflow; no commits.",
+      "expected_output": "A fast-path change: inline criterion, failing test first, minimal edit, focused check and a quick real request, concise handoff",
+      "files": [
+        "workflow-feature"
+      ],
+      "expectations": [
+        "The change is classified as fast path; criteria stay inline (for example AC-1) and no spec, plan, or state files are created",
+        "The test asserting the 404 message is updated or added and observed failing before server.js changes",
+        "The implementation is minimal and keeps the error code NOT_FOUND and response shape",
+        "node --test passes afterward and one real HTTP request to an unknown path shows the new message",
+        "The handoff is concise and lists the actual commands and outcomes"
       ]
     }
   ]
