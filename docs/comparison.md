@@ -82,7 +82,7 @@ Both packs ship one "entry" skill that every other skill depends on. They solve 
 | | `superpowers:using-superpowers` | `using-e6-agent-skills` |
 |---|---|---|
 | **Job** | A gate: make the model check for and invoke skills before acting | A coordinator: own the request from context to verified handoff |
-| **Size** | 487 words | about 1,150 words, plus the shared workflow contract, read once per workflow |
+| **Size** | 487 words | about 1,190 words, plus the shared workflow contract, read once per workflow |
 | **How it reaches the model** | Full body injected at session start inside `<EXTREMELY_IMPORTANT>` (Claude Code, Cursor, Codex, Copilot CLI, and other hosts) | A 102-word bootstrap injected at session start (Claude Code, Cursor plugin) or installed in `AGENTS.md`/`GEMINI.md`/`.mdc`; the body loads on demand |
 | **Trigger rule** | "If there is even a 1% chance a skill applies… you MUST invoke it", before any response, including clarifying questions | Classify every engineering request before the first tool action; ordinary conversation skips the workflow |
 | **Visible use** | Announce "Using [skill] to [purpose]"; one todo per checklist item | Announce "Using `<skill>` for `<purpose>`"; a workflow-state file for larger work |

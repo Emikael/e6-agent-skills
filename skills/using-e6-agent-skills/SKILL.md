@@ -21,7 +21,7 @@ Before the first tool action on an engineering request:
 
 1. Classify the request with the route table below.
 2. Load the matching skill and announce it in one line: `Using <skill> for <purpose>.`
-3. Read [the workflow contract](../../references/workflow-contract.md) once per workflow. It defines authorization, plan mode, project overrides, the fast path, scales, artifacts, delegation, and handoff.
+3. Read [the workflow contract](../../references/workflow-contract.md) once per workflow. It defines authorization, plan mode, project overrides, the fast path, scales, artifacts, delegation, and handoff. Questions need none of it; fast-path work needs only its Fast Path and Handoff sections.
 
 | Request | Start with | Ends at |
 |---|---|---|
