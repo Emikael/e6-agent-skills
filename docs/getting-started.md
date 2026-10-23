@@ -125,25 +125,29 @@ The `.claude/commands/` directory contains slash commands for Claude Code:
 | `/ship` | e6-shipping-and-launch |
 | `/webperf` | web-performance-auditor (specialist agent, web apps only) |
 
-> **Note:** When installed as a Claude Code plugin you may see a warning like
-> _"Default commands/ folder is ignored because the manifest sets 'commands'"_.
-> This is expected. The root `commands/` directory belongs to the Antigravity CLI
-> and is intentionally separate from `.claude/commands/`. All Claude Code slash
-> commands load correctly from `.claude/commands/`; the warning is cosmetic.
+> **Note:** The root `commands/` directory holds TOML command definitions for the
+> Antigravity CLI and other TOML-based hosts, separate from `.claude/commands/`.
+> The Claude Code plugin manifest lists both directories, so current versions
+> should not warn that the default `commands/` folder is ignored; Claude Code
+> registers only the `.md` commands. If an older pack or Claude Code version shows
+> _"Default commands/ folder is ignored because the manifest sets 'commands'"_,
+> the warning is cosmetic: all slash commands load from `.claude/commands/`.
 
 ## Using References
 
-The `references/` directory contains supplementary checklists:
+The `references/` directory contains the shared workflow documents and supplementary checklists:
 
 | Reference | Use With |
 |-----------|----------|
+| `workflow-bootstrap.md` | Host project rules and the Claude Code SessionStart hook; selects `using-e6-agent-skills` and `e6-caveman` |
+| `workflow-contract.md` | using-e6-agent-skills and lifecycle specialists (phase gates, scope, artifacts, handoff) |
 | `testing-patterns.md` | e6-test-driven-development |
 | `performance-checklist.md` | e6-performance-optimization |
 | `security-checklist.md` | e6-security-and-hardening |
 | `accessibility-checklist.md` | e6-frontend-ui-engineering |
 | `definition-of-done.md` | all skills / every change |
 | `observability-checklist.md` | e6-observability-and-instrumentation |
-| `orchestration-patterns.md` | e6-doubt-driven-development |
+| `orchestration-patterns.md` | using-e6-agent-skills (delegation and parallel workers) |
 
 Load a reference when you need detailed patterns beyond what the skill covers.
 
@@ -163,12 +167,15 @@ The `/spec` and `/plan` commands create working artifacts (`SPEC.md`, `tasks/pla
 - Update them when scope or decisions change.
 - If your repo doesn’t want these files long‑term, delete them before merge or add the folder to `.gitignore` — the workflow doesn’t require them to be permanent.
 
+Larger work also keeps `tasks/workflow-state.md`: the coordinator's phase pointer, evidence, project-rule overrides, blockers, and next action. The template is in the [workflow contract's Artifacts section](../references/workflow-contract.md#artifacts); fast-path work keeps this state inline. These are default locations. Project rules can relocate the artifacts — for example to an ignored scratch location or the team's tracker when the project forbids committing plans — and the agent records that override in the workflow state.
+
 ### Working across sessions
 
 The same artifacts are the handoff between sessions. For a small task, run the whole lifecycle in one session. For anything non-trivial, persist concise state at phase boundaries; a fresh session is optional when context becomes stale. Artifacts carry the accepted scope and evidence:
 
 - the spec — `SPEC.md`, or wherever your spec actually lives
 - `tasks/plan.md` and `tasks/todo.md` — or the external tracker the plan identifies, if you use one
+- `tasks/workflow-state.md` — for larger work, the phase pointer and verification evidence
 
 **Before switching**, make sure those files reflect the decisions that still apply, the scope you approved, the questions still open, the next task, and the current verification state (which tests ran, against what).
 

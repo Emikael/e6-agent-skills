@@ -1,7 +1,7 @@
 #!/bin/bash
-# Claude Code SessionStart hook: inject a compact workflow contract once per
-# lifecycle event. Skills themselves remain progressively loaded on demand.
-# Registered through the standard hooks/hooks.json plugin component.
+# SessionStart hook for Claude Code and Cursor plugins: inject a compact workflow
+# contract once per lifecycle event. Skills themselves remain progressively loaded on demand.
+# Registered by hooks/hooks.json (Claude Code) and hooks/hooks-cursor.json (Cursor).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -38,4 +38,10 @@ Router file: $ROUTER_FILE
 
 $CONTENT"
 
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$(json_escape "$CONTEXT")"
+# Cursor plugins set CURSOR_PLUGIN_ROOT (and may also set CLAUDE_PLUGIN_ROOT) and
+# read snake_case additional_context. Claude Code reads the nested form.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{"additional_context":"%s"}\n' "$(json_escape "$CONTEXT")"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$(json_escape "$CONTEXT")"
+fi

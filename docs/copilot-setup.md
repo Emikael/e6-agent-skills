@@ -146,7 +146,7 @@ For the rest, run the same `mkdir`/`cat` block with the filename swapped (the fi
 | `.github/prompts/build.prompt.md` | Implement the next planned task, test-first | Use the e6-incremental-implementation and e6-test-driven-development skills. Read `tasks/plan.md` and `tasks/todo.md`, then take the next unchecked task and only that one. Write a failing test first, make it pass, refactor, run the suite, and tick the task off. Stop there and report what changed. |
 | `.github/prompts/test.prompt.md` | Write tests before the code that satisfies them | Use the e6-test-driven-development skill. For new behavior, write a failing test that captures it before any implementation. For a bug, reproduce it with a failing test first, then fix it. Run the suite after each step and show me the red and the green output. |
 
-Write the body yourself, or take it from this table, rather than copying `.claude/commands/*.md` verbatim: those files reference skills as `e6-agent-skills:<name>`, a Claude Code plugin namespace that means nothing to Copilot.
+Write the body yourself, or take it from this table, rather than copying `.claude/commands/*.md` verbatim: those files are written for Claude Code, and a skill reference in the Claude Code plugin namespace form `e6-agent-skills:<name>` means nothing to Copilot.
 
 ### If the skill slash commands don't appear
 

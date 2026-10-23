@@ -7,8 +7,19 @@ const path = require('node:path');
 
 const START = '<!-- e6-workflow-bootstrap:start -->';
 const END = '<!-- e6-workflow-bootstrap:end -->';
-const HOST_FILES = { codex: 'AGENTS.md', opencode: 'AGENTS.md', claude: 'CLAUDE.md', gemini: 'GEMINI.md' };
-const USAGE = 'Usage: node scripts/install-workflow-bootstrap.js --project <directory> --pack <installed-pack-root> --host <codex|claude|opencode|gemini> [--dry-run|--check|--write]';
+const HOST_FILES = {
+  codex: 'AGENTS.md',
+  opencode: 'AGENTS.md',
+  grok: 'AGENTS.md',
+  claude: 'CLAUDE.md',
+  gemini: 'GEMINI.md',
+  cursor: path.join('.cursor', 'rules', 'e6-workflow.mdc'),
+};
+// Cursor project rules are MDC files; a new rule needs frontmatter to load on every request.
+const NEW_FILE_HEADERS = {
+  cursor: '---\ndescription: e6 workflow bootstrap for engineering tasks\nalwaysApply: true\n---\n',
+};
+const USAGE = 'Usage: node scripts/install-workflow-bootstrap.js --project <directory> --pack <installed-pack-root> --host <codex|claude|opencode|gemini|cursor|grok> [--dry-run|--check|--write]';
 
 function parseArgs(args) {
   const options = { mode: 'dry-run' };
@@ -81,13 +92,16 @@ function main() {
     ].join('\n');
     const target = path.join(project, HOST_FILES[options.host]);
     const existing = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
-    const desired = replaceBlock(existing, block);
+    const desired = replaceBlock(existing || NEW_FILE_HEADERS[options.host] || '', block);
     const current = desired === existing;
     if (options.mode === 'check') {
       console.log(`${current ? 'Current' : 'Missing or outdated'} e6 workflow bootstrap: ${target}`);
       process.exitCode = current ? 0 : 1;
     } else if (options.mode === 'write') {
-      if (!current) fs.writeFileSync(target, desired);
+      if (!current) {
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, desired);
+      }
       console.log(`${current ? 'Unchanged' : 'Installed'} e6 workflow bootstrap: ${target}`);
     } else {
       console.log(`Dry run: ${current ? 'unchanged' : 'would install/update'} ${target}\n\n${block}`);

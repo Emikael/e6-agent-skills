@@ -28,6 +28,9 @@ jobs:
       - name: Test project workflow bootstrap installer
         run: node --test scripts/install-workflow-bootstrap-test.js
 
+      - name: Test portable skill builder
+        run: node --test scripts/build-portable-skills-test.js
+
       - name: Test skill lint rules
         run: node --test scripts/lib/skill-lint-test.js
 
@@ -101,6 +104,7 @@ jobs:
           node --test
           scripts/lib/skill-lint-test.js
           scripts/install-workflow-bootstrap-test.js
+          scripts/build-portable-skills-test.js
           scripts/validate-versions-test.js
           scripts/run-evals-test.js
           scripts/validate-reference-links-test.js
