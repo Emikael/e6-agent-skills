@@ -1,6 +1,6 @@
 ---
 name: e6-browser-testing-with-devtools
-description: Use when a browser or Chrome DevTools is needed to diagnose unresponsive button clicks, inspect the DOM, console errors or network requests, verify visual and keyboard interaction, or profile rendered performance. Use when browser/computer runtime checks or existing browser automation are required for a UI change.
+description: Use when a browser or Chrome DevTools is needed to diagnose unresponsive button clicks, inspect the DOM, console errors or network requests, verify visual and keyboard interaction, capture screenshots, or record a performance trace. Use when browser/computer runtime checks, Playwright, or other end-to-end automation are required for a UI change.
 ---
 
 # Browser Testing with DevTools

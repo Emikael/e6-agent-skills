@@ -1,6 +1,6 @@
 ---
 name: e6-git-workflow-and-versioning
-description: Use when committing, branching, resolving a merge conflict, splitting a messy working tree into clean atomic commits, opening or reviewing a pull request (PR), pushing to a remote, or organizing parallel work with git worktrees. Use when cutting a release, choosing a semantic version bump, tagging, or writing a changelog.
+description: Use when committing, branching, resolving a merge conflict, splitting a messy working tree into clean atomic commits, opening a pull request (PR) and following it through checks and comments, pushing to a remote, or organizing parallel work with git worktrees. Use when cutting a release, choosing a semantic version bump, tagging, or writing a changelog.
 ---
 
 # Git Workflow and Versioning

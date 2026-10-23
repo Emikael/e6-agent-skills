@@ -1,6 +1,6 @@
 ---
 name: e6-context-engineering
-description: Use when setting up project rules files or context packing, starting a coding session, switching tasks, delegating work, or fixing degraded agent output, forgotten conventions, or stale context.
+description: Use when setting up project rules files or context packing, loading context before a task, resuming after compaction or an interrupted session, switching tasks, preparing context for delegated work, or fixing degraded agent output, forgotten conventions, or stale context.
 ---
 
 # Context Engineering

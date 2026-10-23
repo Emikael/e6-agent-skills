@@ -1,6 +1,6 @@
 ---
 name: e6-api-and-interface-design
-description: Use when designing APIs, module boundaries, or any public interface. Use when creating REST or GraphQL endpoints, defining type contracts between modules, or establishing boundaries between frontend and backend.
+description: Use when designing APIs, module boundaries, or any public interface. Use when creating REST or GraphQL endpoints, OpenAPI or schema contracts, error responses, pagination, idempotency, versioning, or breaking changes, defining type contracts between modules, or establishing boundaries between frontend and backend.
 ---
 
 # API and Interface Design

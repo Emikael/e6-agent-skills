@@ -1,6 +1,6 @@
 ---
 name: e6-doubt-driven-development
-description: Use when a non-trivial claim or uncertain approach needs cross-examining before proceeding, when adversarial review in a fresh context could expose hidden failure modes, or when correctness matters under production auth, security, billing, payments, migration, or deletion risk. Use when stress-testing a high-stakes plan, reviewing an irreversible operation, or reasoning in unfamiliar code.
+description: Use when a non-trivial claim or uncertain approach needs cross-examining before proceeding, when adversarial review in a fresh context could expose hidden failure modes, or when correctness matters under production auth, security, billing, payments, migration, or deletion risk. Use when stress-testing a high-stakes plan or reviewing an irreversible operation.
 ---
 
 # Doubt-Driven Development

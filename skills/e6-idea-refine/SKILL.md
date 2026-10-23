@@ -1,6 +1,6 @@
 ---
 name: e6-idea-refine
-description: Use when an idea is vague, when the user asks to ideate or refine an idea, when several product directions could solve the same problem, or when a proposed onboarding flow or product plan needs stress-testing before committing to an MVP. Use when exploring ways to improve developer retention or team knowledge sharing.
+description: Use when an idea is vague, when the user asks to brainstorm, ideate, or refine an idea, when several product directions could solve the same problem, or when a product plan, onboarding, or user flow needs stress-testing and alternatives before committing to an MVP.
 ---
 
 # Idea Refine

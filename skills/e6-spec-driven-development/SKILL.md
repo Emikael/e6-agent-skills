@@ -1,6 +1,6 @@
 ---
 name: e6-spec-driven-development
-description: Use when starting a new project, feature, service, or significant change without a specification, even when no spec was requested by name. Use when drafting a PRD or requirements document with objectives and boundaries, when requirements are vague or ambiguous, or when identity, billing, notifications, reporting, or other independently testable capabilities need a capability map and dependency order before specifying.
+description: Use when starting a new project, feature, service, or significant change without a specification, even when no spec was requested by name. Use when drafting a PRD or requirements document with objectives and boundaries, when requirements need observable acceptance criteria, or when a large requirement spanning several domains must be decomposed into independently specifiable modules with a capability map and dependency order.
 ---
 
 # Spec-Driven Development

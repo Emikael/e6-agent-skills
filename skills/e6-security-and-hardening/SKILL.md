@@ -1,6 +1,6 @@
 ---
 name: e6-security-and-hardening
-description: Use when auditing or hardening input handlers, authentication/login flows against the OWASP Top Ten, authorization, data storage, uploads, webhooks, external integrations or server-side URL fetches; auditing dependencies or triaging package-manager audit findings and supply-chain risk; or handling personal data and privacy compliance.
+description: Use when auditing or hardening input handlers, authentication/login flows against the OWASP Top Ten, authorization, data storage, uploads, webhooks, external integrations or server-side URL fetches; auditing dependencies or triaging package-manager audit findings and supply-chain risk; handling personal data and privacy compliance; or securing LLM features and agent tools against prompt injection and leaked secrets.
 ---
 
 # Security and Hardening

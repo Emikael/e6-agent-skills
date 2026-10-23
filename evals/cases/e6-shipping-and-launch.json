@@ -22,6 +22,10 @@
       },
       {
         "prompt": "Why is this function so slow on large inputs?"
+      },
+      {
+        "prompt": "Set up alerts and tracing for the new payment service",
+        "owner": "e6-observability-and-instrumentation"
       }
     ]
   },

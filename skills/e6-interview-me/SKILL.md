@@ -1,6 +1,6 @@
 ---
 name: e6-interview-me
-description: Use when an ask is underspecified, requirements are fuzzy, or the underlying intent is unclear before a plan, spec, or code exists. Use when the user says "interview me", "grill me", "ask me one question at a time", "are we sure?", or "stress-test my thinking", or when conflicting goals would change the requested feature.
+description: Use when an ask is underspecified, requirements are fuzzy, or the underlying intent is unclear before a plan, spec, or code exists. Use when the user says "interview me", "grill me", or "ask me one question at a time", or when conflicting goals would change the requested feature.
 ---
 
 # Interview Me

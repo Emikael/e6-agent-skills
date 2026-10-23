@@ -1,6 +1,6 @@
 ---
 name: e6-ci-cd-and-automation
-description: Use when setting up or modifying CI/CD build and deployment pipelines, configuring test runners in CI, automating quality gates that block merge on failure, adding a deploy stage with manual approval, debugging CI failures, or establishing preview deployments, staged rollouts, and rollback automation.
+description: Use when setting up or modifying CI/CD build and deployment pipelines such as GitHub Actions, configuring test runners in CI, automating quality gates that block merge on failure, adding a deploy stage with manual approval, debugging CI failures or flaky pipeline runs, or establishing preview deployments, staged rollouts, and rollback automation.
 ---
 
 # CI/CD and Automation

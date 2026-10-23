@@ -1,6 +1,6 @@
 ---
 name: e6-test-driven-development
-description: Use when writing or running tests for new logic, fixing a bug, changing behavior, proving code works, or refactoring existing functionality with regression risk. Use when a failing reproduction, red-green-refactor cycle, test-only deliverable, or preserved contract needs evidence.
+description: Use when writing tests for new logic, fixing a bug, changing behavior, proving code works, or refactoring existing functionality with regression risk. Use when a failing reproduction, red-green-refactor cycle, test-only deliverable, or preserved contract needs evidence.
 ---
 
 # Test-Driven Development

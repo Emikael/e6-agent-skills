@@ -1,6 +1,6 @@
 ---
 name: e6-source-driven-development
-description: Use when framework or library behavior depends on version, when implementing session handling, auth, forms, routing, data fetching, or integration APIs, or when an approach must be verified against official documentation. Use when the user requests source-cited code, current best practices, documented patterns, or a verified Next.js, Express, Stripe, or other framework implementation.
+description: Use when correctness depends on a specific framework or library version or API, when code may rely on deprecated or changed APIs, or when the user asks for source-cited code, current documented patterns, or an implementation verified against official documentation, such as a Next.js, Express, or Stripe integration.
 ---
 
 # Source-Driven Development

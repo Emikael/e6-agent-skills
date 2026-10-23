@@ -1,6 +1,6 @@
 ---
 name: e6-documentation-and-adrs
-description: Use when documenting an architecture decision (ADR), recording the reasoning behind a design choice, changing public APIs or setup flows, shipping features that change user-facing behavior, or maintaining README, API documentation, changelog, and agent rules.
+description: Use when documenting an architecture decision (ADR), recording the reasoning behind a design choice, writing or updating a README, setup guide, API reference, runbook, or agent instruction file, or when a change makes existing docs inaccurate.
 ---
 
 # Documentation and ADRs
