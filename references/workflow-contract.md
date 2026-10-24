@@ -17,6 +17,10 @@ Reusing authorization never overrides an instruction to pause. Present the artif
 
 Write the artifact only where the host allows. Explicit approval authorizes the following phases; silence does not. Do not add approval gates the user did not request.
 
+### Material Values Are Asked, Not Invented
+
+When the request leaves a value open that changes behavior users or operators will notice, ask before building unless the user said not to. Examples: limits, windows, thresholds, error codes and status semantics, roles and permissions, retention, money rounding. Send one message with at most three questions, each with a recommended default, and keep working on everything else meanwhile. If the host cannot ask (headless run, no user), proceed with the defaults and list them under "Decisions I made" in the final explanation.
+
 ### Project Rules Override Pack Defaults
 
 Read project rules (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, or equivalents) before the first edit. Where they conflict with this pack, the project wins:
@@ -108,6 +112,14 @@ Before behavior changes, record observable scenarios from requirements and exist
 
 Include applicable happy paths, boundary/empty inputs, errors, authorization roles, persistence, and concurrency. State which realistic code defect each test would catch. Verify the new test fails because behavior is missing or wrong, then implement. Setup errors are not the RED step. Assert externally observable outcomes; mocking internal calls can conceal broken integration.
 
+Keep a **traceability matrix** for anything beyond the fast path: one row per requirement ID with its test, the test's last result, and a runtime observation, or a blocker. Build it from the spec before coding. Re-read the spec and plan before handoff, especially after a compaction, and close every row. A row without evidence blocks handoff.
+
+```markdown
+| ID | Test | Result | Runtime check |
+|---|---|---|---|
+| RATE-1 | limiter.test.js "locks after 5 failures" | pass | curl ×6 → 429, Retry-After 890 |
+```
+
 Run focused checks per slice and relevant regressions during integration. Run the project-required suite and gates before handoff, within the project's check-scope rules. Do not rerun a huge unchanged suite after each prose edit unless repository policy requires it. Document pre-existing failures by name and consequence. Documentation/configuration changes use appropriate validators or executable examples; add a behavioral test only when behavior or risk warrants one.
 
 ## Local Runtime and Computer Use
@@ -125,11 +137,11 @@ Runtime checks complement tests. A repeatable manual check should become an auto
 
 ### Communication
 
-Use `e6-caveman`: result or next action first; short readable sentences; exact identifiers, commands, errors, numbers, units, negation, and uncertainty. Code, docs, and commits keep normal grammar. Announce each phase or specialist once: `Using <skill> for <purpose>.`
+Use `e6-caveman` levels by reader: `ultra` between agents (packets, returns, findings), `full` for progress lines to the user, `lite` for questions, decisions, and the final explanation. Exact identifiers, commands, errors, numbers, units, negation, and uncertainty are never compressed. Code, docs, and commits keep normal grammar. Announce each phase or specialist once: `Using <skill> for <purpose>.`
 
 ### Delegation
 
-Choose a pattern from [orchestration patterns](orchestration-patterns.md); routine and serial work stays in one session. Use `e6-context-engineering` to build packets.
+Choose a pattern from [orchestration patterns](orchestration-patterns.md) and staff specialists from the [team roster](team.md); routine and serial work stays in one session. Use `e6-context-engineering` to build packets. Pass paths, not content: write a large diff or spec to a file once and send its path.
 
 - **Packet in** (target 500 words): goal, requirement IDs, owned writable paths, read-only pointers, constraints, real commands and cwd, deliverable. Fresh context when supported; never the full history.
 - **Return** (target 200 words): status, `path:line` evidence, commands run with outcomes, blockers, artifact pointer.
@@ -155,5 +167,19 @@ Every specialist returns to its caller (the coordinator, a command, or the user)
 - **Evidence:** commands with outcomes, runtime observations, `path:line` pointers.
 - **Blockers:** what remains blocked, why, and the smallest next step.
 - **Next:** the next phase or action.
+
+### Final Explanation
+
+An implementation request ends with a detailed explanation for the user, at `e6-caveman` `lite`: full sentences, no filler. Use these sections, and omit any that do not apply:
+
+1. **What changed:** the delivered behavior in user terms, then the main files.
+2. **Requirements coverage:** the traceability matrix (ID, test, result, runtime check).
+3. **How it was validated:** each command run and its result; what was exercised at runtime and how; what could not be run, and why.
+4. **Review:** specialists consulted; findings fixed; findings left open, with the reason.
+5. **Decisions I made:** defaults chosen where the request was silent.
+6. **Needs your decision:** open questions, each with options and a recommendation.
+7. **How to try it:** the shortest commands or steps to see it work.
+
+Never claim a check you did not run. Mark inference as inference.
 
 An active workflow exists when a coordinator runs in this session or the workflow state records an active phase. Inside one, return to the coordinator; never ask the user to invoke the next skill. A user request for a narrower deliverable (findings, a plan, a failing test) stops at that deliverable. A standalone implementation request with no active workflow loads `using-e6-agent-skills` once. A worker, or a specialist invoked by a command, never loads the coordinator; it follows its packet or command and returns to its caller.

@@ -103,7 +103,7 @@ For example, when you ask the agent to:
 The plugin registers reusable subagent definitions from the `agents/` directory:
 - `code-reviewer.md`
 - `security-auditor.md`
-- `test-engineer.md`
+- `qa-engineer.md`
 - `web-performance-auditor.md`
 
 You can invoke these personas directly within your session or when delegating tasks using subagents.

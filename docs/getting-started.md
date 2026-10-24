@@ -102,7 +102,7 @@ The `agents/` directory contains pre-configured agent personas:
 | Agent | Purpose |
 |-------|---------|
 | `code-reviewer.md` | Five-axis code review |
-| `test-engineer.md` | Test strategy and writing |
+| `qa-engineer.md` | Test strategy and writing |
 | `security-auditor.md` | Vulnerability detection |
 | `web-performance-auditor.md` | Core Web Vitals & performance audit (via `/webperf`) |
 

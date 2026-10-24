@@ -366,14 +366,22 @@ The commands above are entry points. The pack includes 26 skills total — 24 li
 
 ## Agent Personas
 
-Pre-configured specialist personas for targeted reviews:
+A specialist team, coordinated by the Tech Lead (the `using-e6-agent-skills` coordinator), staffed only when a change touches its surface ([roster](references/team.md)):
 
-| Agent | Role | Perspective |
+| Agent | Role | Guarantees |
 |-------|------|-------------|
-| [code-reviewer](agents/code-reviewer.md) | Senior Staff Engineer | Five-axis code review with "would a staff engineer approve this?" standard |
-| [test-engineer](agents/test-engineer.md) | QA Specialist | Test strategy, coverage analysis, and the Prove-It pattern |
-| [security-auditor](agents/security-auditor.md) | Security Engineer | Vulnerability detection, threat modeling, OWASP assessment |
-| [web-performance-auditor](agents/web-performance-auditor.md) | Web Performance Engineer | Core Web Vitals audit with Quick/Deep modes and a metric-honesty rule; run it via `/webperf` |
+| [tech-lead](agents/tech-lead.md) | Tech Lead | Staffing, sequencing, merged findings, and the detailed final explanation |
+| [product-owner](agents/product-owner.md) | Product Owner | Complete, testable acceptance criteria and the business context; asks about open values |
+| [ui-ux-designer](agents/ui-ux-designer.md) | UI/UX Designer | Design contract and experience review |
+| [backend-engineer](agents/backend-engineer.md) | Backend Engineer | Clean-architecture services, APIs, and data access, built or reviewed |
+| [frontend-engineer](agents/frontend-engineer.md) | Frontend Engineer | Components, states, and accessibility, built or reviewed |
+| [qa-engineer](agents/qa-engineer.md) | QA Engineer | Test plan, requirement traceability, delivery sign-off |
+| [security-auditor](agents/security-auditor.md) | Security Engineer | Threat modeling and vulnerability review |
+| [sre-engineer](agents/sre-engineer.md) | SRE | Production readiness: deploy, config, migrations, observability, rollback |
+| [code-reviewer](agents/code-reviewer.md) | Senior Staff Engineer | Five-axis review against the [code-quality bar](references/code-quality.md) |
+| [web-performance-auditor](agents/web-performance-auditor.md) | Web Performance Engineer | Core Web Vitals audit; run it via `/webperf` |
+
+Specialists exchange packets and findings in `e6-caveman` `ultra` (paths, not content); the user gets full sentences.
 
 See [docs/agents.md](docs/agents.md) for the decision matrix, orchestration rules, and how personas compose with skills and slash commands.
 
@@ -393,6 +401,8 @@ Quick-reference material that skills pull in when needed:
 | [performance-checklist.md](references/performance-checklist.md) | Core Web Vitals targets, frontend/backend checklists, measurement commands |
 | [accessibility-checklist.md](references/accessibility-checklist.md) | Keyboard nav, screen readers, visual design, ARIA, testing tools |
 | [observability-checklist.md](references/observability-checklist.md) | On-call questions, structured logging, RED/USE metrics, tracing, symptom-based alerting, pre-launch gate |
+| [team.md](references/team.md) | Specialist roster, staffing rules, packet/return format, findings schema with confidence, model tiers |
+| [code-quality.md](references/code-quality.md) | SOLID, clean architecture, clean code, comment policy, test quality |
 | [orchestration-patterns.md](references/orchestration-patterns.md) | One coordinator, independent bounded workers, high-risk review fan-out, sequential fallback, and ownership |
 
 ---
@@ -451,7 +461,7 @@ The portable core stays in shared directories. Host-specific paths are native di
 | Layer / consumer | Repository paths | Purpose |
 |---|---|---|
 | Shared workflow core | `skills/` (26 skills) | Portable `SKILL.md` workflows used by every integration |
-| Shared review material | `agents/` (4 personas), `references/` (9 documents) | Specialist reviewers, workflow contracts, and pack-level checklists |
+| Shared review material | `agents/` (10 personas), `references/` (11 documents) | Specialist reviewers, workflow contracts, and pack-level checklists |
 | Claude Code adapter | `.claude/commands/` (9 commands), `.claude-plugin/`, `hooks/` | Slash-command wrappers, marketplace metadata, and lifecycle hooks |
 | Gemini CLI adapter | `.gemini/commands/` (9 commands) | Gemini-native TOML command wrappers |
 | Antigravity CLI adapter | `commands/` (9 commands), `plugin.json` | Legacy TOML wrappers and the root plugin manifest; see the [known wrapper limitation](docs/antigravity-setup.md#lifecycle-workflows-and-command-compatibility) |

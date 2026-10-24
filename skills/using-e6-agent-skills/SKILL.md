@@ -7,7 +7,7 @@ description: Use when starting an engineering task or session, deciding which sk
 
 ## Overview
 
-Own the workflow until the user's goal is satisfied. Selecting one skill starts a phase; it does not complete the task. Load specialists when needed. One coordinator runs the lifecycle; workers and specialists return evidence to it.
+You are the Tech Lead. Own the workflow until the user's goal is satisfied. Selecting one skill starts a phase; it does not complete the task. Staff specialists only when the change touches their surface. One coordinator runs the lifecycle; workers and specialists return evidence to it.
 
 ## When to Use
 
@@ -41,12 +41,14 @@ Before the first tool action on an engineering request:
 Advance automatically through applicable phases. Never ask the user to invoke the next skill. Continue independent work while a material question is pending.
 
 0. **Start.** Read project rules and `git status`. Identify outcome, scope, authorization, and any active workflow; resume from its state. Apply and record the contract's project overrides. Plan mode or a requested approval follows the contract's plan-mode rule.
-1. **Understand.** Use `e6-context-engineering` to trace code, tests, callers, commands, decisions, and available tools. Use `e6-spec-driven-development` to record observable criteria before a behavior change: inline `AC-n` on the fast path, a spec for larger work. Ask only about material Open decisions. In the same first message, explicitly request any consent a required check needs; never leave it as an optional offer.
-2. **Plan.** Use `e6-planning-and-task-breakdown` for multiple slices. Map each requirement ID to a test, an implementation path, and a runtime check. State assumptions and proceed within authorization.
-3. **Build.** Use `e6-incremental-implementation` with `e6-test-driven-development`: failing behavior test → minimal implementation → passing test → regressions. Unchanged behavior uses characterization checks; prose and configuration use validators. Failures go to `e6-debugging-and-error-recovery`, then resume the slice.
+1. **Understand.** Use `e6-context-engineering` to trace code, tests, callers, commands, decisions, and available tools. Use `e6-spec-driven-development` (the Product Owner view) to record observable criteria before a behavior change: inline `AC-n` on the fast path, a spec for larger work. Ask about material values the request leaves open ([contract](../../references/workflow-contract.md#material-values-are-asked-not-invented)): at most three questions, each with a recommended default. In the same first message, explicitly request any consent a required check needs; never leave it as an optional offer.
+   - **Staff the team.** Beyond the fast path, pick specialists from the [team roster](../../references/team.md) by the surfaces the change touches, and announce them in one line each. Brief them in `e6-caveman` `ultra` with paths, not content.
+2. **Plan.** Use `e6-planning-and-task-breakdown` for multiple slices. Start the traceability matrix: each requirement ID → test → implementation path → runtime check. The QA engineer reviews the test plan when staffed. State assumptions and proceed within authorization.
+3. **Build.** Use `e6-incremental-implementation` with `e6-test-driven-development`: failing behavior test → minimal implementation → passing test → regressions. Code follows [code quality](../../references/code-quality.md): no narrating comments. Unchanged behavior uses characterization checks; prose and configuration use validators. Failures go to `e6-debugging-and-error-recovery`, then resume the slice.
 4. **Verify.** Run project checks within the project's check scope. Exercise the changed behavior locally per the contract; for web UI, look for the project's own test procedure or skill first, then fall back to `e6-browser-testing-with-devtools`. Compilation is not runtime evidence. Update docs the change made inaccurate with `e6-documentation-and-adrs`.
-5. **Review.** Use `e6-code-review-and-quality` on the actual diff, docs included, against criteria and evidence. High-risk diffs (auth, persisted data, payments, public API, migrations) use the persona fan-out in [orchestration patterns](../../references/orchestration-patterns.md). Resolve Critical/Required findings, simplify where complexity warrants, rerun affected checks, and confirm the [Definition of Done](../../references/definition-of-done.md).
-6. **Handoff.** Report delivered behavior, actual checks, blockers, and next action. Use `e6-git-workflow-and-versioning` and `e6-shipping-and-launch` only when committing or releasing is in scope. A reviewable local result completes an implementation request that does not authorize release.
+5. **Review.** Use `e6-code-review-and-quality` on the actual diff, docs included, against criteria and evidence. Staffed reviewers (security, SRE, UI/UX, backend, frontend) review in parallel when the host supports it. Merge their findings with the [team](../../references/team.md#findings) rules. Resolve Critical/Required findings, simplify where complexity warrants, rerun affected checks, and confirm the [Definition of Done](../../references/definition-of-done.md).
+   - **Final validation.** Re-read the spec and plan, which matters most after a compaction. Close every traceability row, and have QA sign off when staffed. A row without evidence blocks handoff.
+6. **Handoff.** Write the contract's [final explanation](../../references/workflow-contract.md#final-explanation) in full sentences: what changed, requirements coverage, how it was validated, review, decisions made, needs your decision, how to try it. Use `e6-git-workflow-and-versioning` and `e6-shipping-and-launch` (with SRE readiness) only when committing or releasing is in scope. A reviewable local result completes an implementation request that does not authorize release.
 
 A blocked required check stays blocked; record its consequence instead of claiming completion.
 
@@ -83,6 +85,8 @@ Delegate only independent work, using the contract's packet format; parallel wri
 | "Tests pass; app must work." | Exercise the changed runtime path. |
 | "The user must approve each phase." | Reuse existing authorization. Pause only for plan mode, a requested approval, or a missing decision/action. |
 | "Small task; skip the skill check." | Classify first. The fast path is a route, not a skipped workflow. |
+| "The request didn't say the limit; I'll pick one." | Ask with a recommended default; if no one can answer, report it under Decisions I made. |
+| "Spawn every specialist to be safe." | Staff by surface. Each extra agent costs tokens and adds noise. |
 | "Project rules are just suggestions." | Project rules override pack defaults; record the override. |
 | "Load all 26 skills for certainty." | Read only the current phase and triggered specialists. |
 
@@ -103,4 +107,5 @@ Delegate only independent work, using the contract's packet format; parallel wri
 - [ ] Acceptance criteria map to observed tests and runtime checks.
 - [ ] Project overrides honored and recorded.
 - [ ] Docs updated before review; Critical/Required findings resolved and affected checks rerun.
+- [ ] Traceability matrix closed; the final explanation delivered with every section that applies.
 - [ ] Output concise; exact commands, uncertainty, and limitations preserved.

@@ -11,7 +11,7 @@ Claude offers two different surfaces, with different install paths:
 
 ## Claude Code, including the Desktop app's Code tab
 
-Use the plugin. It carries every skill, the nine lifecycle commands, the four personas, and the compact SessionStart bootstrap:
+Use the plugin. It carries every skill, the nine lifecycle commands, the ten specialist personas, and the compact SessionStart bootstrap:
 
 ```
 /plugin marketplace add Emikael/e6-agent-skills

@@ -36,7 +36,7 @@ Size slices by the shared [sizing rule](../e6-planning-and-task-breakdown/SKILL.
 ### 3. RED → GREEN → verify
 
 1. Follow `e6-test-driven-development`. For changed behavior, derive an acceptance test and observe its intended failure before implementing. For preserved behavior or refactoring, run baseline or characterization checks before editing; do not invent a failure.
-2. Implement the smallest complete behavior. Reuse existing patterns. Add no generic abstraction for hypothetical requirements and no adjacent cleanup.
+2. Implement the smallest complete behavior. Reuse existing patterns. Add no generic abstraction for hypothetical requirements and no adjacent cleanup. Follow [code quality](../../references/code-quality.md): no comments that restate the code; a rule worth a comment becomes a test or a type.
 3. Run focused tests and the applicable build/type/lint gates.
 4. Execute the slice through its real local entry point, using the domain skill's checks: `e6-frontend-ui-engineering` and `e6-browser-testing-with-devtools` for UI, `e6-api-and-interface-design` and real requests for API boundaries.
 5. On an unexpected failure, stop adding slices. Use `e6-debugging-and-error-recovery`, preserve the evidence, fix the cause, and reverify.

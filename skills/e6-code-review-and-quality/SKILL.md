@@ -55,7 +55,7 @@ Label evidence as **ran** (by you, with the result), **author-provided**, or **n
 
 ### 5. Report actionable findings
 
-Use the contract's [finding severities](../../references/workflow-contract.md#finding-severity): **Critical**, **Required**, **Optional**, **Nit**, **FYI**. Before reporting a Critical or Required finding, re-read the cited code and confirm the failure scenario; downgrade or drop it if it does not hold. Lead with correctness and security. Do not manufacture findings to cover every axis.
+Use the contract's [finding severities](../../references/workflow-contract.md#finding-severity): **Critical**, **Required**, **Optional**, **Nit**, **FYI**. Before reporting a Critical or Required finding, re-read the cited code and confirm the failure scenario; downgrade or drop it if it does not hold. Lead with correctness and security. Do not manufacture findings to cover every axis. Give each finding a confidence of 50, 75, or 100. A finding at 75 or higher quotes the cited line. Report a 50 only when it is Critical. Merge reviewers' findings with the [team rules](../../references/team.md#findings). Check the diff against [code quality](../../references/code-quality.md): narrating comments the change added are a Nit to delete.
 
 ```
 Verdict: APPROVE | REQUEST CHANGES | COMMENT

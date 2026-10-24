@@ -51,7 +51,7 @@ Its strengths are authenticity and sharpness: this is how one very good engineer
 
 ### e6-agent-skills (this project)
 
-e6-agent-skills organizes the **entire product lifecycle** as skills, with a meta-skill (`using-e6-agent-skills`) that routes a task to the right one. Every skill carries a **Common Rationalizations** table (the excuses an agent makes to skip a step, each rebutted) and **Red Flags**. Slash commands map one-to-one to lifecycle phases; `/build auto` runs a whole approved plan in one pass; and `/ship` fans out review **personas** (`code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor`) in parallel, then merges them into a go/no-go. It reuses existing authorization, requires acceptance/test/runtime/review evidence, and shares checklists including a Definition of Done, and runs across most major agent tools with a single-command install on several of them.
+e6-agent-skills organizes the **entire product lifecycle** as skills, with a meta-skill (`using-e6-agent-skills`) that routes a task to the right one. Every skill carries a **Common Rationalizations** table (the excuses an agent makes to skip a step, each rebutted) and **Red Flags**. Slash commands map one-to-one to lifecycle phases; `/build auto` runs a whole approved plan in one pass; and `/ship` fans out review **personas** (`code-reviewer`, `security-auditor`, `qa-engineer`, `web-performance-auditor`) in parallel, then merges them into a go/no-go. It reuses existing authorization, requires acceptance/test/runtime/review evidence, and shares checklists including a Definition of Done, and runs across most major agent tools with a single-command install on several of them.
 
 What is newer, and the current point of difference: a **three-tier eval framework** lives in the repo. Tier 1 checks structure, Tier 2 checks that each skill's description carries the vocabulary users actually say and that no two skills collide on routing (deterministic, runs in CI), and Tier 3 grades an agent's real execution trace against per-skill expectations. Neither of the other two ships that kind of in-repo, catalog-wide measurement today. The honest trade-off in the other direction: e6-agent-skills has less of a single opinionated "run" than Superpowers, and none of the three has yet solved durable cross-session memory well.
 
@@ -149,7 +149,7 @@ The at-a-glance table tells you how they are shaped. This is how to choose in pr
 
 ### Concrete scenarios
 
-- *"Ship a new endpoint with auth, tests, and a security pass before merge."* e6-agent-skills: `/spec` to `/ship`, with the security-auditor and test-engineer personas fanning out at the end.
+- *"Ship a new endpoint with auth, tests, and a security pass before merge."* e6-agent-skills: `/spec` to `/ship`, with the security-auditor and qa-engineer personas fanning out at the end.
 - *"Refactor a gnarly subsystem overnight and review it in the morning."* Superpowers: hand it the plan, let subagent-driven development and the task reviewer run.
 - *"I have a vague idea and keep letting the agent guess the requirements."* Pocock's `grill-me` (or e6-agent-skills' `e6-interview-me`) to pin down intent before any code.
 - *"Fix one clear bug, test-first."* Any of them; reach for the lightest one you already have installed.

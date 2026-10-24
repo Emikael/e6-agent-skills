@@ -20,7 +20,7 @@ Packets, returns, ownership, and worktree isolation follow the [workflow contrac
 
 ### High-Risk Review Fan-Out
 
-For diffs touching auth, persisted data, payments, public APIs, or migrations, the Review phase may run `code-reviewer`, `security-auditor`, and `test-engineer` in parallel on the same scoped diff. Each returns findings on the contract's severity scale. The coordinator deduplicates by location and failure scenario, re-reads the code for each Critical/Required finding, and resolves conflicts by evidence. Run passes sequentially when parallel workers are unavailable, and say so.
+For diffs touching auth, persisted data, payments, public APIs, or migrations, the Review phase may run `code-reviewer`, `security-auditor`, and `qa-engineer` in parallel on the same scoped diff. Each returns findings on the contract's severity scale. The coordinator deduplicates by location and failure scenario, re-reads the code for each Critical/Required finding, and resolves conflicts by evidence. Run passes sequentially when parallel workers are unavailable, and say so.
 
 ## Host Adaptation
 

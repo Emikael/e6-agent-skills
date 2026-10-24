@@ -15,7 +15,7 @@
         "top_k": 3
       },
       {
-        "prompt": "This one requirement covers identity, billing, notifications, and reporting \u2014 decompose it into independently specifiable modules first",
+        "prompt": "This one requirement covers identity, billing, notifications, and reporting — decompose it into independently specifiable modules first",
         "top_k": 3
       },
       {
@@ -88,6 +88,18 @@
         "Proof planning includes the local assignment-and-retry flow, not only compilation",
         "The agent records existing task authority and returns the settled spec for planning without asking for a second approval",
         "No new pricing, channels or notification-history behavior is invented"
+      ]
+    },
+    {
+      "id": 4,
+      "kind": "dialogue",
+      "prompt": "We are seeing brute-force password guessing against POST /login. Add rate limiting so attackers can't keep guessing passwords. Write the spec before any code.",
+      "expected_output": "A flow-analyzed spec that asks about the behavior-changing values it cannot settle, each with a recommended default, instead of inventing them",
+      "expectations": [
+        "Flows and gaps are analyzed: failed and successful logins, the locked state, expiry, other users from the same client, and unknown usernames",
+        "At most three questions are asked about material values (for example the attempt limit, window, key, or status code), each with a recommended default and why it matters",
+        "No limit, window, or error semantic is presented as decided without being marked as an assumption or a question",
+        "Acceptance criteria are observable Given/When/Then statements with requirement IDs"
       ]
     }
   ]

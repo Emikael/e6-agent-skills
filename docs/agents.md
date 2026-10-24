@@ -4,10 +4,18 @@ Specialist personas that play a single role with a single perspective. Each pers
 
 | Persona | Role | Best for |
 |---------|------|----------|
-| [code-reviewer](../agents/code-reviewer.md) | Senior Staff Engineer | Five-axis review before merge |
+| [tech-lead](../agents/tech-lead.md) | Tech Lead (the coordinator) | Staffing the team, sequencing, merging findings, the final explanation |
+| [product-owner](../agents/product-owner.md) | Product Owner | Flows, gaps, testable acceptance criteria, questions with recommended defaults |
+| [ui-ux-designer](../agents/ui-ux-designer.md) | UI/UX Designer | Design contract before build; experience review after |
+| [backend-engineer](../agents/backend-engineer.md) | Backend Engineer | Building or reviewing services, APIs, data, jobs |
+| [frontend-engineer](../agents/frontend-engineer.md) | Frontend Engineer | Building or reviewing components, state, rendering, accessibility |
+| [qa-engineer](../agents/qa-engineer.md) | QA Engineer | Test plan, requirement traceability, delivery sign-off |
 | [security-auditor](../agents/security-auditor.md) | Security Engineer | Vulnerability detection, OWASP-style audit |
-| [test-engineer](../agents/test-engineer.md) | QA Engineer | Test strategy, coverage analysis, Prove-It pattern |
+| [sre-engineer](../agents/sre-engineer.md) | SRE | Deploy, config, migrations, observability, rollback; production readiness |
+| [code-reviewer](../agents/code-reviewer.md) | Senior Staff Engineer | Five-axis review before merge |
 | [web-performance-auditor](../agents/web-performance-auditor.md) | Web Performance Engineer | Core Web Vitals audit, loading/rendering/network analysis |
+
+The coordinator staffs these by the surfaces a change touches; the roster, packet and return format, findings schema, and model tiers are in [references/team.md](../references/team.md). Specialists talk to the coordinator in `e6-caveman` `ultra`; the user gets full sentences.
 
 ## How personas relate to skills and commands
 
@@ -28,7 +36,7 @@ Pick this when you want one perspective on the current change and the user is in
 
 - "Review this PR" → invoke `code-reviewer` directly
 - "Are there security issues in `auth.ts`?" → invoke `security-auditor` directly
-- "What tests are missing for the checkout flow?" → invoke `test-engineer` directly
+- "What tests are missing for the checkout flow?" → invoke `qa-engineer` directly
 - "Audit Core Web Vitals on the product page" → invoke `web-performance-auditor` directly
 
 ### Slash command (single skill or persona)
@@ -41,7 +49,7 @@ Pick this when there's a repeatable workflow you'd otherwise re-explain every ti
 ### Slash command (orchestrator — fan-out)
 Pick this only when **independent** investigations can run in parallel and produce reports that a single agent then merges.
 
-- `/ship` → uses the specialist perspectives justified by release risk (`code-reviewer`, `security-auditor`, `test-engineer`, plus `web-performance-auditor` for web-facing changes when performance risk applies), delegates independent checks when useful, and synthesizes candidate-bound readiness evidence
+- `/ship` → uses the specialist perspectives justified by release risk (`code-reviewer`, `security-auditor`, `qa-engineer`, plus `web-performance-auditor` for web-facing changes when performance risk applies), delegates independent checks when useful, and synthesizes candidate-bound readiness evidence
 
 Sequential phases run in the coordinator; independent substantial work may use scoped parallel workers. See [references/orchestration-patterns.md](../references/orchestration-patterns.md) for the full pattern catalog and anti-patterns.
 
@@ -63,7 +71,7 @@ Is the work a single perspective on a single artifact?
 /ship
   ├── (parallel) code-reviewer           → review report
   ├── (parallel) security-auditor        → audit report
-  ├── (parallel) test-engineer           → coverage report
+  ├── (parallel) qa-engineer           → coverage report
   └── (conditional) web-performance-auditor → web performance audit
                   ↓
         merge phase (main agent): dedupe, map severities, re-verify Critical/Required
@@ -110,7 +118,7 @@ Why this fails:
 
 The personas in this repo are designed to work as Claude Code subagents and as Agent Teams teammates without modification:
 
-- **As subagents:** auto-discovered when this plugin is enabled (no path config needed). Use the Agent tool with `subagent_type: code-reviewer` (or `security-auditor`, `test-engineer`, `web-performance-auditor`). `/ship` is the canonical example.
+- **As subagents:** auto-discovered when this plugin is enabled (no path config needed). Use the Agent tool with `subagent_type: code-reviewer` (or `security-auditor`, `qa-engineer`, `web-performance-auditor`). `/ship` is the canonical example.
 - **As Agent Teams teammates** (experimental, requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`): reference the same persona name when spawning a teammate. The persona's body is **appended to** the teammate's system prompt as additional instructions (not a replacement), so your persona text sits on top of the team-coordination instructions the lead installs (SendMessage, task-list tools, etc.).
 
 Subagents only report results back to the main agent. Agent Teams let teammates message each other directly. Use subagents when reports are enough; use Agent Teams when sub-agents need to challenge each other's findings (e.g. competing-hypothesis debugging). See [references/orchestration-patterns.md](../references/orchestration-patterns.md) for the full mapping.

@@ -26,7 +26,7 @@ Discover the test framework, test placement, focused and full-suite commands, an
 
 ### 2. Translate acceptance into tests
 
-Map each changed requirement ID or criterion to a test with preconditions, action, and an observable expected outcome. Include failure paths, boundaries, and preserved invariants. Derive expected values from the accepted contract, not from the code.
+Map each changed requirement ID or criterion to a test with preconditions, action, and an observable expected outcome. Record each mapping as a row of the contract's [traceability matrix](../../references/workflow-contract.md#acceptance-and-tests), and name the plausible bug each test would catch. Include failure paths, boundaries, and preserved invariants. Derive expected values from the accepted contract, not from the code.
 
 Choose the smallest level that proves it: unit for pure logic, integration for API/database/filesystem boundaries, end-to-end for critical user flows. Mock only uncontrollable boundaries; a mock's return value or an internal call sequence does not prove the feature.
 

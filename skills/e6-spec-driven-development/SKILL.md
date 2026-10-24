@@ -45,6 +45,9 @@ Save `CAPABILITY-MAP.md`, then one `SPEC-<module>.md` per module in dependency o
 
 ### 3. Specify behavior and proof
 
+**Analyze flows first** (the Product Owner view; staff the [product owner](../../agents/product-owner.md) for larger work). For each flow, map the entry point, decisions, happy path, and terminal states. Then list the gaps: unhappy paths, empty and boundary data, permissions, repeats (double submit, retry), state transitions, and integrations. Every gap becomes a requirement, an assumption, or an Open decision. Values that change visible behavior (limits, windows, error semantics, roles) are asked about with a recommended default, per the [contract](../../references/workflow-contract.md#material-values-are-asked-not-invented). Never invent them silently.
+
+
 **Small change.** On the fast path, write inline criteria in the task, state, or PR; no file:
 
 ```text

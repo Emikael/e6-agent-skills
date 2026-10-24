@@ -60,7 +60,7 @@ The error budget constrains risk: a low budget slows rollout, an exhausted one n
 
 ### 5. Decide, deploy when authorized, observe
 
-Issue **GO**, **NO-GO**, or **HOLD**. GO needs current gates, proven recovery, and required authorization. A failed required gate means NO-GO; missing decisive evidence means HOLD. Accepted risk is recorded as an exception, never as a passed check.
+Issue **GO**, **NO-GO**, or **HOLD**. GO needs current gates, proven recovery, required authorization, a closed traceability matrix (QA sign-off), and an SRE readiness pass for deploy, config, data, observability, and rollback (the [SRE persona](../../agents/sre-engineer.md) checklist). Unresolved items go to the final explanation under **Needs your decision**, each with options and a recommendation. A failed required gate means NO-GO; missing decisive evidence means HOLD. Accepted risk is recorded as an exception, never as a passed check.
 
 ```
 Verdict: GO|NO-GO|HOLD — candidate <sha/artifact>, env
