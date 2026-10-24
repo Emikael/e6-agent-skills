@@ -63,6 +63,19 @@ function installReference(task, dir) {
   }
 }
 
+/** Top-level test results from TAP output, keyed by name (duplicates numbered). */
+function parseTapCases(output) {
+  const cases = [];
+  const seen = new Map();
+  for (const match of output.matchAll(/^(not ok|ok) \d+ - (.+?)(?: # .*)?$/gm)) {
+    const name = match[2];
+    const count = (seen.get(name) || 0) + 1;
+    seen.set(name, count);
+    cases.push({ name: count > 1 ? `${name} #${count}` : name, ok: match[1] === 'ok' });
+  }
+  return cases;
+}
+
 function parseTap(output) {
   const count = name => {
     const match = new RegExp(`^# ${name} (\\d+)$`, 'm').exec(output);
@@ -90,6 +103,7 @@ function runNodeTests(cwd, files, { timeoutMs = 120000 } = {}) {
     pass: counts.pass ?? 0,
     fail: counts.fail ?? (result.status === 0 ? 0 : 1),
     error: timedOut ? 'timeout' : undefined,
+    cases: parseTapCases(output),
     output: output.slice(-4000),
   };
 }
@@ -180,5 +194,5 @@ function materializeTask(task) {
 
 module.exports = {
   BENCH_DIR, TASKS_DIR, loadTasks, loadTask, validateTask, materializeTask, runNodeTests, runHidden,
-  applyMutant, installReference, copyTree, tempDir, parseTap,
+  applyMutant, installReference, copyTree, tempDir, parseTap, parseTapCases,
 };

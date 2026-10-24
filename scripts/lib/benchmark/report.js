@@ -118,8 +118,9 @@ function renderMarkdown(summary, metadata, { includeModel = false, title = 'Benc
   const label = id => metadata.arms.find(arm => arm.id === id)?.label || id;
   const lines = [];
   lines.push(`# ${title}`, '');
-  lines.push(`Run \`${metadata.runId}\` · ${metadata.startedAt.slice(0, 10)} · Claude Code ${metadata.cliVersion} · effort \`${metadata.effort}\` · ${includeModel ? `model \`${metadata.model}\` · ` : ''}${metadata.reps} repetition(s) × ${metadata.tasks.length} task(s) × ${arms.length} arm(s) · ${summary.counts.scored}/${summary.counts.total} runs scored.`);
+  lines.push(`Run \`${metadata.runId}\` · ${metadata.startedAt.slice(0, 10)} · Claude Code ${metadata.cliVersion} · effort \`${metadata.effort}\` · mode \`${metadata.mode || 'natural'}\` · ${includeModel ? `model \`${metadata.model}\` · ` : ''}${metadata.reps} repetition(s) × ${metadata.tasks.length} task(s) × ${arms.length} arm(s) · ${summary.counts.scored}/${summary.counts.total} runs scored.`);
   if (!includeModel) lines.push('', 'Every arm, the simulated user, and the judge used the same pinned model and effort level; the model id is recorded with the raw results, not in this repository.');
+  if (metadata.mode === 'invoked') lines.push('', `Invoked mode: each pack's prompt began with one line asking for its workflow (${metadata.arms.filter(arm => arm.invokePrefix).map(arm => `${arm.label}: "${arm.invokePrefix}"`).join('; ')}); the baseline prompt was unchanged.`);
   lines.push('', '## Arms', '', '| Arm | Source | Fingerprint |', '|---|---|---|');
   for (const arm of metadata.arms) lines.push(`| ${arm.label} | ${arm.source} | \`${(arm.hash || '').slice(0, 12)}\` |`);
 

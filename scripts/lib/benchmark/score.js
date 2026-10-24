@@ -78,8 +78,14 @@ function maxIndent(source) {
   return source.split('\n').filter(line => line.trim()).reduce((max, line) => Math.max(max, line.match(/^ */)[0].length), 0);
 }
 
+/**
+ * Mutation score of the agent's own tests. Only test cases that pass against the reference
+ * implementation count, so tests of reasonable extra behavior (beyond the reference) do not
+ * void the whole suite. A mutant is killed when any of those valid cases fails.
+ */
 function mutationScore(task, deliveredDir, agentTests) {
-  if (!agentTests.length) return { score: 0, valid: false, reason: 'no agent tests', killed: [], survived: task.mutants.map(m => m.name) };
+  const allSurvived = reason => ({ score: 0, valid: false, reason, validCases: 0, totalCases: 0, killed: [], survived: task.mutants.map(m => m.name) });
+  if (!agentTests.length) return allSurvived('no agent tests');
   const run = prepare => {
     const dir = tempDir('e6-bench-mut-');
     try {
@@ -90,17 +96,26 @@ function mutationScore(task, deliveredDir, agentTests) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   };
-  const validity = run(dir => installReference(task, dir));
-  if (!validity.ok) {
-    return { score: 0, valid: false, reason: 'agent tests fail against the reference implementation', killed: [], survived: task.mutants.map(m => m.name) };
-  }
+  const reference = run(dir => installReference(task, dir));
+  const validNames = new Set(reference.cases.filter(c => c.ok).map(c => c.name));
+  if (!validNames.size) return { ...allSurvived('no agent test passes against the reference implementation'), totalCases: reference.cases.length };
   const killed = [];
   const survived = [];
   for (const mutant of task.mutants) {
     const result = run(dir => { installReference(task, dir); applyMutant(dir, mutant); });
-    (result.ok ? survived : killed).push(mutant.name);
+    const passed = new Set(result.cases.filter(c => c.ok).map(c => c.name));
+    const caught = result.error === 'timeout' || [...validNames].some(name => !passed.has(name));
+    (caught ? killed : survived).push(mutant.name);
   }
-  return { score: killed.length / task.mutants.length, valid: true, killed, survived };
+  return {
+    score: killed.length / task.mutants.length,
+    valid: true,
+    reason: validNames.size < reference.cases.length ? `${reference.cases.length - validNames.size} agent test(s) fail on the reference and were ignored` : undefined,
+    validCases: validNames.size,
+    totalCases: reference.cases.length,
+    killed,
+    survived,
+  };
 }
 
 function scopeMetrics(task, changes, deliveredDir, processInfo) {

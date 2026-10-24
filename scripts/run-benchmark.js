@@ -8,7 +8,7 @@
  *   node scripts/run-benchmark.js validate [--tasks a,b]
  *   node scripts/run-benchmark.js run --model <id> [--effort medium] [--arms a,b] [--tasks a,b]
  *        [--reps 1] [--concurrency 2] [--max-cost-usd 25] [--per-run-usd 5] [--judge]
- *        [--judge-model <id>] [--out <dir>] [--seed <n>]
+ *        [--judge-model <id>] [--mode natural|invoked] [--out <dir>] [--seed <n>]
  *   node scripts/run-benchmark.js report <results-dir> [--publish <file.md>]
  */
 'use strict';
@@ -118,7 +118,7 @@ async function runOne({ task, arm, rep, options, weights, scoring, runDir, budge
   const exchanges = [];
   try {
     let sessionId = null;
-    let input = task.config.prompt;
+    let input = options.mode === 'invoked' && arm.invoke_prefix ? `${arm.invoke_prefix}\n\n${task.config.prompt}` : task.config.prompt;
     const maxFollowups = task.config.max_followups ?? scoring.maxFollowups;
     for (let turn = 0; ; turn++) {
       const remaining = options.perRunUsd - record.cost.agentUsd;
@@ -307,6 +307,7 @@ async function main(args = process.argv.slice(2)) {
   const runOptions = {
     model: options.model,
     effort: options.effort || 'medium',
+    mode: options.mode || 'natural',
     reps: Number(options.reps || 1),
     // Agents may stop processes by name (for example `pkill -f server.js`); one run at a time
     // keeps one arm from disturbing another. Raise only when that risk is acceptable.
@@ -318,6 +319,7 @@ async function main(args = process.argv.slice(2)) {
     seed: Number(options.seed || scoring.seed),
   };
   if (!runOptions.model) throw new Error('--model is required');
+  if (!['natural', 'invoked'].includes(runOptions.mode)) throw new Error('--mode must be natural or invoked');
   const tasks = loadTasks(list(options.tasks));
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const outDir = path.resolve(options.out || path.join(BENCH_DIR, 'results', runId));
@@ -325,11 +327,11 @@ async function main(args = process.argv.slice(2)) {
   const arms = prepareArms(list(options.arms), outDir);
   const cliVersion = execFileSync('claude', ['--version'], { encoding: 'utf8' }).trim().split(' ')[0];
   const metadata = {
-    runId, startedAt: new Date().toISOString(), cliVersion, model: runOptions.model, effort: runOptions.effort,
+    runId, startedAt: new Date().toISOString(), cliVersion, model: runOptions.model, effort: runOptions.effort, mode: runOptions.mode,
     reps: runOptions.reps, seed: runOptions.seed, weights: scoring.weights, judge: runOptions.judge,
     judgeModel: runOptions.judge ? runOptions.judgeModel || runOptions.model : null,
     caps: { maxCostUsd: runOptions.maxCostUsd, perRunUsd: runOptions.perRunUsd },
-    arms: arms.map(({ id, label, source, expectedPlugins, hash }) => ({ id, label, source, expectedPlugins, hash })),
+    arms: arms.map(({ id, label, source, expectedPlugins, hash, invoke_prefix: invokePrefix }) => ({ id, label, source, expectedPlugins, hash, invokePrefix: runOptions.mode === 'invoked' ? invokePrefix || null : null })),
     tasks: tasks.map(task => ({ id: task.id, kind: task.config.kind, hash: hashTree(task.dir) })),
     node: process.version, platform: `${os.platform()} ${os.arch()}`,
   };

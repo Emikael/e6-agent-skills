@@ -165,7 +165,9 @@ test('100/3', () => assert.deepEqual(splitCents(100, 3), [34, 33, 33]));
 test('101/3', () => assert.deepEqual(splitCents(101, 3), [34, 34, 33]));
 test('7/4', () => assert.deepEqual(splitCents(7, 4), [2, 2, 2, 1]));
 for (const parts of [0, -1, 1.5]) test('invalid ' + parts, () => assert.throws(() => splitCents(5, parts), RangeError));
+test('extra behavior beyond the reference', () => assert.equal(require('./money').extra, 1));
 `);
+  fs.appendFileSync(path.join(workspace, 'money.js'), 'module.exports.extra = 1;\n');
   const processInfo = { redBeforeGreen: true, runtimeCheck: null, testedAfterLastEdit: true, reviewEvidence: false, pushAttempted: false, subagents: 0 };
   const score = scoreRun({ task, workspace, baselineSha, processInfo, weights: WEIGHTS });
   assert.equal(score.delivery, 'working-tree');
@@ -174,6 +176,8 @@ for (const parts of [0, -1, 1.5]) test('invalid ' + parts, () => assert.throws((
   assert.deepEqual(score.agentTests, ['regression.test.js']);
   assert.equal(score.mutation.valid, true);
   assert.equal(score.mutation.score, 1, `survivors: ${score.mutation.survived}`);
+  assert.equal(score.mutation.validCases, 6, 'the extra-behavior test is ignored, not fatal');
+  assert.match(score.mutation.reason, /1 agent test\(s\) fail on the reference/);
   assert.equal(score.dimensions.process, 2 / 3);
   assert.equal(score.scope.score, 1);
   assert.match(score.diff, /regression\.test\.js/);
