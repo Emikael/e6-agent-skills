@@ -1,0 +1,7 @@
+{
+  "weights": { "outcome": 0.45, "testQuality": 0.2, "process": 0.2, "scope": 0.15 },
+  "maxFollowups": 4,
+  "invocationTimeoutMinutes": 30,
+  "runTimeoutMinutes": 75,
+  "seed": 20261024
+}

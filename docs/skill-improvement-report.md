@@ -197,7 +197,7 @@ The official Cursor, OpenAI, and xAI documentation sites were unreachable from t
 
 ### Behavioral runs on a real model
 
-These used Claude Code CLI 2.1.309 with its default model (recorded by the runner as `claude-sonnet-5-5` for both executor and grader). Each case ran once per configuration; the results are evidence, not statistics.
+These used Claude Code CLI 2.1.309 with its default model for both executor and grader (the model id is recorded with the ignored run results). Each case ran once per configuration; the results are evidence, not statistics. They also inherited this environment's synced claude.ai plugins (about ten, including `engineering`), because the eval runner does not isolate the child's configuration; the [benchmark](../evals/benchmark/README.md) runs every arm in an isolated configuration instead.
 
 | Case | Result |
 |---|---|

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "tier1-boundary",
+    "file": "shipping.js",
+    "find": "    if (order.weightKg <= 1) {\n      cost = 5;\n    } else if (order.weightKg <= 5) {\n      cost = 10;\n    } else if (order.weightKg <= 20) {\n      cost = 25;\n    } else {\n      cost = 25 + Math.ceil(order.weightKg - 20) * 2;\n    }\n    if (order.country == 'CA') {",
+    "replace": "    if (order.weightKg < 1) {\n      cost = 5;\n    } else if (order.weightKg <= 5) {\n      cost = 10;\n    } else if (order.weightKg <= 20) {\n      cost = 25;\n    } else {\n      cost = 25 + Math.ceil(order.weightKg - 20) * 2;\n    }\n    if (order.country == 'CA') {"
+  },
+  {
+    "name": "free-threshold-strict",
+    "file": "shipping.js",
+    "find": "if (order.subtotal >= 100) {",
+    "replace": "if (order.subtotal > 100) {"
+  },
+  {
+    "name": "ca-multiplier",
+    "file": "shipping.js",
+    "find": "cost = cost * 1.5;",
+    "replace": "cost = cost * 1.4;"
+  },
+  {
+    "name": "overweight-floor",
+    "file": "shipping.js",
+    "find": "      cost = 25 + Math.ceil(order.weightKg - 20) * 2;\n    }\n    if (order.country == 'CA') {",
+    "replace": "      cost = 25 + Math.floor(order.weightKg - 20) * 2;\n    }\n    if (order.country == 'CA') {"
+  },
+  {
+    "name": "intl-express-15",
+    "file": "shipping.js",
+    "find": "cost = cost + 30;",
+    "replace": "cost = cost + 15;"
+  },
+  {
+    "name": "member-discount-free",
+    "file": "shipping.js",
+    "find": "if (order.member) {",
+    "replace": "if (order.member || order.subtotal > 400) {"
+  }
+]

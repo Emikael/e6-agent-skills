@@ -1,0 +1,8 @@
+[
+  { "name": "remainder-dropped", "file": "money.js", "find": "i < remainder ? share + 1 : share", "replace": "share" },
+  { "name": "remainder-to-last", "file": "money.js", "find": "i < remainder ? share + 1 : share", "replace": "i >= parts - remainder ? share + 1 : share" },
+  { "name": "remainder-off-by-one", "file": "money.js", "find": "i < remainder ? share + 1 : share", "replace": "i <= remainder ? share + 1 : share" },
+  { "name": "no-validation", "file": "money.js", "find": "if (!Number.isInteger(parts) || parts <= 0) {", "replace": "if (false) {" },
+  { "name": "allows-fractional-parts", "file": "money.js", "find": "!Number.isInteger(parts) || parts <= 0", "replace": "!(parts > 0)" },
+  { "name": "wrong-error-type", "file": "money.js", "find": "throw new RangeError(", "replace": "throw new TypeError(" }
+]

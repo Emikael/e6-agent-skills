@@ -1,0 +1,10 @@
+{
+  "id": "feature-status-filter",
+  "kind": "feature",
+  "title": "Status filter on GET /reports",
+  "prompt": "Implement the change described in REQUEST.md in this repository. You are authorized to make local code, test, and documentation changes and to run local commands. Follow AGENTS.md. Tell me when you are done.",
+  "interface": ["server.js"],
+  "visible_tests": ["server.test.js"],
+  "runtime": "http",
+  "max_followups": 4
+}

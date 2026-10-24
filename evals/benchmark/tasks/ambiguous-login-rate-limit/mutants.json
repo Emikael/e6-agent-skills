@@ -1,0 +1,9 @@
+[
+  { "name": "limit-3", "file": "server.js", "find": "const MAX_FAILURES = 5;", "replace": "const MAX_FAILURES = 3;" },
+  { "name": "window-10-min", "file": "server.js", "find": "const WINDOW_MS = 15 * 60 * 1000;", "replace": "const WINDOW_MS = 10 * 60 * 1000;" },
+  { "name": "no-reset-on-success", "file": "server.js", "find": "        failures.delete(key);\n", "replace": "" },
+  { "name": "per-ip-only", "file": "server.js", "find": "const key = `${req.socket.remoteAddress}\\u0000${username}`;", "replace": "const key = `${req.socket.remoteAddress}`;" },
+  { "name": "no-retry-after", "file": "server.js", "find": ", { 'Retry-After': String(retryAfter) }", "replace": "" },
+  { "name": "status-403", "file": "server.js", "find": "send(res, 429,", "replace": "send(res, 403," },
+  { "name": "limited-attempts-counted", "file": "server.js", "find": "        const retryAfter = Math.ceil", "replace": "        failures.set(key, [...history, at]);\n        const retryAfter = Math.ceil" }
+]

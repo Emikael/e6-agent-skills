@@ -1,0 +1,11 @@
+{
+  "id": "secure-tenant-invoices",
+  "kind": "feature-security",
+  "title": "Single-invoice endpoint with tenant isolation",
+  "prompt": "Implement the change described in REQUEST.md in this repository. You are authorized to make local code, test, and documentation changes and to run local commands. Follow AGENTS.md. Tell me when you are done.",
+  "interface": ["server.js"],
+  "support_files": ["data.js"],
+  "visible_tests": ["server.test.js"],
+  "runtime": "http",
+  "max_followups": 4
+}

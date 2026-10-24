@@ -31,6 +31,12 @@ jobs:
       - name: Test portable skill builder
         run: node --test scripts/build-portable-skills-test.js
 
+      - name: Test benchmark harness
+        run: node --test scripts/run-benchmark-test.js
+
+      - name: Validate benchmark tasks
+        run: node scripts/run-benchmark.js validate
+
       - name: Test skill lint rules
         run: node --test scripts/lib/skill-lint-test.js
 
@@ -105,6 +111,7 @@ jobs:
           scripts/lib/skill-lint-test.js
           scripts/install-workflow-bootstrap-test.js
           scripts/build-portable-skills-test.js
+          scripts/run-benchmark-test.js
           scripts/validate-versions-test.js
           scripts/run-evals-test.js
           scripts/validate-reference-links-test.js

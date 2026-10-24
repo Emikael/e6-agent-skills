@@ -9,3 +9,4 @@ evals/results/
 evals/plugin/results/
 __pycache__/
 dist/
+evals/benchmark/results/
