@@ -16,6 +16,15 @@
     "invoke_prefix": "Use the e6-agent-skills workflow for this task."
   },
   {
+    "id": "e6-prev",
+    "label": "e6-agent-skills (previous)",
+    "source": {
+      "type": "local",
+      "ref": "5e5a529"
+    },
+    "invoke_prefix": "Use the e6-agent-skills workflow for this task."
+  },
+  {
     "id": "superpowers",
     "label": "Superpowers",
     "source": {
