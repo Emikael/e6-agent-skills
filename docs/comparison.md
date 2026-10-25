@@ -110,7 +110,7 @@ Both packs ship one "entry" skill that every other skill depends on. They solve 
 - A mandatory design approval before every implementation. e6 honors approval when the host is in plan mode or the user asks for it.
 - Full-body injection. e6 keeps the always-on context small and accepts weaker activation on hosts without a bootstrap.
 
-**Can the two be compared directly?** Yes. The [benchmark](../evals/benchmark/README.md) runs both packs, plus a no-skills baseline, on the same tasks and model in isolated configurations. In the [results](benchmark-results.md), neither pack activated on its own on small tasks. When explicitly invoked, Superpowers led on test quality and blind review, and it was the only pack whose lead over the baseline was outside the noise. The revised e6 (third pass) closed part of that gap against its own previous version. Small tasks and one model limit these conclusions; see the threats to validity.
+**Can the two be compared directly?** Yes. The [benchmark](../evals/benchmark/README.md) runs both packs, plus a no-skills baseline, on the same tasks and model in isolated configurations. In the [results](benchmark-results.md), neither pack activated on its own on small tasks. Against the previous e6, Superpowers led when both were explicitly invoked. In a head-to-head with the revised e6 (third pass), e6 leads on the plain request: composite 0.83 vs 0.80, an interval that crosses zero, and the blind judge preferred e6 in 84% of tasks. When both are invoked, they tie at 0.84, and both beat the baseline. e6 costs more per run. Small tasks and one model limit these conclusions; see the threats to validity.
 
 ---
 
