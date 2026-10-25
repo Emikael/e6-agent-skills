@@ -110,20 +110,7 @@ Both packs ship one "entry" skill that every other skill depends on. They solve 
 - A mandatory design approval before every implementation. e6 honors approval when the host is in plan mode or the user asks for it.
 - Full-body injection. e6 keeps the always-on context small and accepts weaker activation on hosts without a bootstrap.
 
-**Can the two be compared directly?** Statically, yes: the table above. Behaviorally, there is no published result, and none is claimed here. To measure it:
-1. Use the same model, repository, and prompts for each arm.
-2. Give each arm exactly one plugin enabled; running both routers at once is invalid (see below).
-3. Use a mix of prompts: questions, trivial fixes, bugs, and features.
-4. Record from transcripts:
-   - skill activation;
-   - criteria before code;
-   - failing test before the fix;
-   - runtime check;
-   - review before handoff;
-   - unnecessary approval stops;
-   - tokens and wall time.
-
-The e6 arm can reuse `node scripts/run-evals.js --behavioral <skill> --engine claude`. The Superpowers arm needs the same fixtures run through a headless agent with only that plugin installed.
+**Can the two be compared directly?** Yes. The [benchmark](../evals/benchmark/README.md) runs both packs, plus a no-skills baseline, on the same tasks and model in isolated configurations. In the [results](benchmark-results.md), neither pack activated on its own on small tasks. When explicitly invoked, Superpowers led on test quality and blind review, and it was the only pack whose lead over the baseline was outside the noise. The revised e6 (third pass) closed part of that gap against its own previous version. Small tasks and one model limit these conclusions; see the threats to validity.
 
 ---
 
