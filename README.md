@@ -510,6 +510,8 @@ What the numbers say:
 - **Invoked by name:** the two packs tie. Both beat the baseline, with intervals that exclude zero. e6 alone asked about the open requirement.
 - **Costs and gaps:** e6 costs more per run, about 26% more on a plain request and 53% more when invoked. Neither pack ran a review or a runtime check on these tasks. The tasks are small; larger multi-file tasks are the next step to separate the packs.
 
+**Caveat:** the published runs predate a harness fix. The e6 arms could reach the tasks' hidden tests and answer keys, and some e6 examples echoed one task's answers; the other arms could not. Exposure was not measured, so treat e6's numbers as upper bounds until a re-run ([details](docs/benchmark-results.md#benchmark-results-e6-agent-skills-vs-superpowers)).
+
 Full results, per-task tables, and threats to validity are in [benchmark results](docs/benchmark-results.md). Reproduce them with `node scripts/run-benchmark.js`.
 
 ### Design differences

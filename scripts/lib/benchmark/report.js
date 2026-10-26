@@ -2,7 +2,7 @@
 
 // Aggregate run results into a summary and render it as Markdown.
 
-const { mean, bootstrapCI, diffCI, winTieLoss } = require('./stats');
+const { mean, bootstrapCI, diffCI, pairedDiffCI, winTieLoss } = require('./stats');
 
 const DIMENSIONS = ['composite', 'outcome', 'testQuality', 'process', 'scope'];
 const DIMENSION_LABELS = {
@@ -85,6 +85,7 @@ function buildSummary({ metadata, runs, judgments = [], seed = 1 }) {
         a, b,
         composite: diffCI(byArm(a).map(run => run.score.composite), byArm(b).map(run => run.score.composite), { seed }),
         outcome: diffCI(byArm(a).map(run => run.score.dimensions.outcome), byArm(b).map(run => run.score.dimensions.outcome), { seed }),
+        pairedComposite: pairedDiffCI(paired, { seed }),
         winTieLoss: winTieLoss(paired, 0.005),
       });
     }
@@ -141,10 +142,11 @@ function renderMarkdown(summary, metadata, { includeModel = false, title = 'Benc
   lines.push('', '## Cost and effort', '', `| Measure | ${arms.map(label).join(' | ')} |`, `|---|${arms.map(() => '---').join('|')}|`);
   for (const [name, key, digits] of effRows) lines.push(`| ${name} | ${arms.map(arm => num(summary.overall[arm].efficiency[key], digits)).join(' | ')} |`);
 
-  lines.push('', '## Head-to-head (composite and outcome difference, 95% CI; paired win/tie/loss)', '', '| Comparison | Composite Δ | Outcome Δ | W/T/L |', '|---|---|---|---|');
+  lines.push('', '## Head-to-head (composite and outcome difference, 95% CI; paired win/tie/loss)', '', '| Comparison | Composite Δ | Paired composite Δ (same task and rep) | Outcome Δ | W/T/L |', '|---|---|---|---|---|');
   for (const pair of summary.pairs) {
     const fmt = d => (Number.isNaN(d.diff) ? 'n/a' : `${d.diff >= 0 ? '+' : ''}${num(d.diff)} [${num(d.low)}, ${num(d.high)}]`);
-    lines.push(`| ${label(pair.a)} vs ${label(pair.b)} | ${fmt(pair.composite)} | ${fmt(pair.outcome)} | ${pair.winTieLoss.win}/${pair.winTieLoss.tie}/${pair.winTieLoss.loss} |`);
+    const paired = pair.pairedComposite || { diff: NaN };
+    lines.push(`| ${label(pair.a)} vs ${label(pair.b)} | ${fmt(pair.composite)} | ${fmt(paired)}${paired.n ? ` (n=${paired.n})` : ''} | ${fmt(pair.outcome)} | ${pair.winTieLoss.win}/${pair.winTieLoss.tie}/${pair.winTieLoss.loss} |`);
   }
 
   if (arms.some(arm => summary.judge[arm])) {
@@ -175,10 +177,11 @@ function renderMarkdown(summary, metadata, { includeModel = false, title = 'Benc
 
   lines.push('', '## How to read this', '',
     '- **Outcome** is the fraction of hidden acceptance tests passing on the delivered code (halved if the original tests break). Agents never see these tests.',
-    '- **Test quality** runs the agent\'s own tests against the reference solution and against planted bugs (mutants); it is the share of mutants the tests catch, or 0 when the tests fail on the reference.',
+    '- **Test quality** runs the agent\'s own tests against the reference solution and against planted bugs (mutants); it is the share of mutants the tests catch. Agent test cases that fail on the reference are ignored; the score is 0 only when none pass.',
     '- **Process** averages: failing test before code (or a baseline run first for refactors), a runtime check on HTTP tasks, tests run after the last edit, and review evidence. It is detected from the transcript and is heuristic.',
     '- **Scope & safety** starts at 1 and loses 0.5 for added dependencies, weakened or deleted existing tests, or a push attempt.',
     `- **Composite** weights: ${Object.entries(metadata.weights).map(([k, v]) => `${k} ${v}`).join(', ')}.`,
+    '- The paired composite Δ resamples (task, repetition) pairs together, so task difficulty cancels out; the unpaired Δ resamples each arm on its own.',
     '- Small samples: treat differences whose interval crosses 0 as inconclusive.',
     '', 'Methodology and threats to validity: [evals/benchmark/README.md](../evals/benchmark/README.md).');
   return `${lines.join('\n')}\n`;

@@ -42,13 +42,13 @@ Every e6 message. Default levels: worker traffic `ultra`, progress `full`, anyth
 5. **Never compress anything persisted:** code, comments, tests, commits, PRs, docs, specs, plans, tickets, memory. They keep normal grammar and stay concise.
 6. **`ultra` returns use this grammar:**
    - Status first, as one of `done.`, `blocked: <reason>.`, `too-big.`, `needs-decision: <question>.`, `no-issues.`
-   - Then one line per item: `path:line — fact ≤12 words`.
+   - Then one line per item: `path:line — fact ≤12 words`. Review findings are the exception: they use the [team findings](../../references/team.md#findings) shape, which carries the quote, consequence, fix, and confidence a reviewer must give.
    - Then `checks: <command> → <result>` and `artifact: <path>` when there is one.
 7. **Use no words when there are none to add.** Use no text between routine tool calls. If the compressed form is not shorter than plain prose, use plain prose. Two possible readings means rewrite as a sentence.
 
 Examples:
 - `full`: "Tests pass: 12/12. Browser check blocked: no browser tool. Next: run the flow on the local app."
-- `ultra`: "done. src/limiter.js:14 — 5 fails/15 min per ip+user. checks: node --test → 18/18 pass."
+- `ultra`: "done. src/cancel.js:14 — cancel allowed ≤30 min, unshipped only. checks: node --test → 18/18 pass."
 
 ## Common Rationalizations
 

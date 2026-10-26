@@ -117,7 +117,7 @@ Keep a **traceability matrix** for anything beyond the fast path: one row per re
 ```markdown
 | ID | Test | Result | Runtime check |
 |---|---|---|---|
-| RATE-1 | limiter.test.js "locks after 5 failures" | pass | curl ×6 → 429, Retry-After 890 |
+| CANCEL-1 | cancel.test.js "cancels an unshipped order within 30 min" | pass | curl -X POST /orders/42/cancel → 200, status `cancelled` |
 ```
 
 Run focused checks per slice and relevant regressions during integration. Run the project-required suite and gates before handoff, within the project's check-scope rules. Do not rerun a huge unchanged suite after each prose edit unless repository policy requires it. Document pre-existing failures by name and consequence. Documentation/configuration changes use appropriate validators or executable examples; add a behavioral test only when behavior or risk warrants one.

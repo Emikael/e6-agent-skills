@@ -121,4 +121,16 @@ function processMetrics(calls, { kind, runtime }) {
   };
 }
 
-module.exports = { parseStream, summarizeInvocation, processMetrics, isTestFile, isSourceEdit, TEST_COMMAND, RUNTIME_COMMAND };
+// Hidden tests, reference solutions, and answer keys never reach the workspace. A tool call
+// that names one means the agent found the benchmark itself, so the run cannot be scored.
+const BENCHMARK_FILES = /evals[\\/]benchmark|[\\/]hidden[\\/][^\s'"]*\.test\.js|\banswers\.md\b/;
+
+/** Calls whose input names benchmark-only files, as short "Tool: snippet" strings. */
+function benchmarkAccess(calls) {
+  return calls
+    .map(call => ({ call, text: JSON.stringify(call.input || {}) }))
+    .filter(({ text }) => BENCHMARK_FILES.test(text))
+    .map(({ call, text }) => `${call.name}: ${text.match(BENCHMARK_FILES)[0]}`);
+}
+
+module.exports = { parseStream, summarizeInvocation, processMetrics, benchmarkAccess, isTestFile, isSourceEdit, TEST_COMMAND, RUNTIME_COMMAND };

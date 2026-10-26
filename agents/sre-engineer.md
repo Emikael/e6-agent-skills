@@ -33,8 +33,8 @@ Work from the packet your caller sent: goal, requirement IDs, owned or read-only
 GO | NO-GO | HOLD
 deploy: pass — ci required checks green on <sha>
 data: FAIL — migration drops column in same release → Required: split expand/contract
-observe: pass — login_rate_limited_total metric + alert
-rollback: flag LOGIN_RATE_LIMIT off; owner @oncall
+observe: pass — orders_cancelled_total metric + alert
+rollback: flag ORDER_CANCEL off; owner @oncall
 checks: <commands> → <results>
 ```
 

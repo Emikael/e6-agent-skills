@@ -9,12 +9,15 @@ const path = require('node:path');
 const test = require('node:test');
 const { loadTasks, materializeTask, installReference, applyMutant, parseTap } = require('./lib/benchmark/tasks');
 const { checkInit, isolatedEnv } = require('./lib/benchmark/isolation');
-const { parseStream, summarizeInvocation, processMetrics } = require('./lib/benchmark/trace');
+const { parseStream, summarizeInvocation, processMetrics, benchmarkAccess } = require('./lib/benchmark/trace');
 const { agentArgs, parseSimulatorReply, parseJudge, simulatorPrompt } = require('./lib/benchmark/agents');
 const { scoreRun, compositeScore, decisionPoints } = require('./lib/benchmark/score');
-const { bootstrapCI, diffCI, winTieLoss, shuffle, mean } = require('./lib/benchmark/stats');
+const { bootstrapCI, diffCI, pairedDiffCI, winTieLoss, shuffle, mean } = require('./lib/benchmark/stats');
 const { buildSummary, renderMarkdown } = require('./lib/benchmark/report');
-const { parseOptions } = require('./run-benchmark');
+const { execFileSync } = require('node:child_process');
+const { parseOptions, truncateDiff, ARCHIVE_PATHSPEC } = require('./run-benchmark');
+
+const REPO_ROOT = path.resolve(__dirname, '..');
 
 const WEIGHTS = { outcome: 0.45, testQuality: 0.2, process: 0.2, scope: 0.15 };
 
@@ -239,4 +242,54 @@ test('summary and report render every arm without the model id by default', () =
 test('parseOptions handles flags, values, and positionals', () => {
   assert.deepEqual(parseOptions(['run', '--model', 'm', '--judge', '--reps', '3']), { _: ['run'], model: 'm', judge: true, reps: '3' });
   assert.throws(() => parseOptions(['run', '--model']), /Missing value/);
+});
+
+test('local arm archives exclude hidden tests, references, and answer keys', () => {
+  const listing = execFileSync('git', ['archive', '--format=tar', 'HEAD', '--', ...ARCHIVE_PATHSPEC], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
+  const names = execFileSync('tar', ['-t'], { input: listing, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\n');
+  assert.ok(names.includes('skills/using-e6-agent-skills/SKILL.md'), 'plugin content is archived');
+  assert.ok(names.includes('.claude-plugin/plugin.json'), 'plugin manifest is archived');
+  assert.deepEqual(names.filter(name => name.startsWith('evals/')), []);
+});
+
+test('plugin content does not echo task-only codes from answer keys or hidden tests', () => {
+  const codes = file => new Set(fs.readFileSync(file, 'utf8').match(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/g) || []);
+  const readAll = dir => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }) : [])
+    .map(name => path.join(dir, String(name))).filter(file => fs.statSync(file).isFile());
+  const pluginText = ['skills', 'agents', 'references', 'hooks', '.claude/commands', 'commands']
+    .flatMap(dir => readAll(path.join(REPO_ROOT, dir))).map(file => fs.readFileSync(file, 'utf8')).join('\n');
+  for (const task of loadTasks()) {
+    const visible = new Set(readAll(path.join(task.dir, 'repo')).flatMap(file => [...codes(file)]));
+    const secret = [path.join(task.dir, 'answers.md'), ...readAll(path.join(task.dir, 'hidden'))]
+      .flatMap(file => [...codes(file)]).filter(code => !visible.has(code));
+    const echoed = [...new Set(secret)].filter(code => new RegExp(`\\b${code}\\b`).test(pluginText));
+    assert.deepEqual(echoed, [], `${task.id}: plugin content echoes ${echoed.join(', ')}`);
+  }
+});
+
+test('benchmarkAccess flags calls that name benchmark-only files', () => {
+  const calls = [
+    { name: 'Read', input: { file_path: '/repo/evals/benchmark/tasks/x/reference/server.js' } },
+    { name: 'Bash', input: { command: 'cat ../answers.md' } },
+    { name: 'Grep', input: { pattern: 'x', path: '/ws/hidden/acceptance.test.js' } },
+    { name: 'Read', input: { file_path: '/ws/server.test.js' } },
+    { name: 'Read', input: { file_path: '/arms/e6/references/team.md' } },
+  ];
+  assert.deepEqual(benchmarkAccess(calls).map(entry => entry.split(':')[0]), ['Read', 'Bash', 'Grep']);
+});
+
+test('pairedDiffCI resamples pairs together so a constant shift has a tight interval', () => {
+  const pairs = [[0.9, 0.8], [0.5, 0.4], [0.2, 0.1], [0.7, 0.6]];
+  const paired = pairedDiffCI(pairs, { seed: 3 });
+  assert.equal(paired.n, 4);
+  assert.ok(Math.abs(paired.diff - 0.1) < 1e-9);
+  assert.ok(Math.abs(paired.low - 0.1) < 1e-9 && Math.abs(paired.high - 0.1) < 1e-9);
+  const unpaired = diffCI(pairs.map(p => p[0]), pairs.map(p => p[1]), { seed: 3 });
+  assert.ok(unpaired.low < 0.1 && unpaired.high > 0.1, 'unpaired interval is wider');
+  assert.ok(Number.isNaN(pairedDiffCI([]).diff));
+});
+
+test('truncateDiff tells the judge how much was omitted', () => {
+  assert.equal(truncateDiff('abc', 10), 'abc');
+  assert.equal(truncateDiff('abcdef', 4), 'abcd\n[diff truncated: 2 of 6 characters omitted]');
 });

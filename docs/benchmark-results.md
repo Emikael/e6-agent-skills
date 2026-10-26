@@ -7,6 +7,8 @@ Same five tasks, same pinned model and effort, every arm isolated (see the [meth
 3. **Third pass vs previous e6**: the revised e6 (team, caveman levels, inlined bootstrap rules, material-value questions) against the snapshot used in runs 1 and 2, in natural mode.
 4. **Head-to-head, new e6 vs Superpowers**: the current e6 against Superpowers and the baseline in one session, in both modes. This is the comparison to quote.
 
+> **Known exposure in every published run.** These runs used a harness that materialized the e6 arms from a full `git archive` of this repository. Each e6 plugin directory therefore also held every task's hidden tests, reference solution, and answer key, and the session-start hook printed a path inside that directory. Several e6 skill and persona examples also echoed the ambiguous task's answer key (a 5-failures-per-15-minutes login limit with 429 and `Retry-After`). The Superpowers and baseline arms had neither. Whether any agent read those files was not measured. The harness now excludes `evals/` from arm archives, keeps arms outside the repository, and marks a run `contaminated` when a tool call names benchmark files, and the examples were rewritten. Treat the e6 numbers below as upper bounds until a re-run under the fixed harness.
+
 ## Summary
 
 **Current standing (run 4).** With the plain request, the new e6 leads Superpowers: composite 0.83 vs 0.80; test quality 0.79 vs 0.69; the blind judge's first choice in 84% vs 12% of tasks. The composite difference's interval crosses zero, so it is a lead, not proof. Asked for their workflows, the two tie: 0.84 each, test quality 0.84 each, judge first 52% vs 48%. Both packs beat the baseline there, with intervals that exclude zero. e6 costs more per run: $0.093 vs $0.074 (plain request) and $0.159 vs $0.104 (invoked). It is the only pack that asked about open requirements (4% and 16% of runs). Neither pack reviewed its diff or exercised the change at runtime.
@@ -407,7 +409,7 @@ Invoked mode: each pack's prompt began with one line asking for its workflow (e6
 ## How to read this
 
 - **Outcome** is the fraction of hidden acceptance tests passing on the delivered code (halved if the original tests break). Agents never see these tests.
-- **Test quality** runs the agent's own tests against the reference solution and against planted bugs (mutants); it is the share of mutants the tests catch, or 0 when the tests fail on the reference.
+- **Test quality** runs the agent's own tests against the reference solution and against planted bugs (mutants); it is the share of mutants the tests catch. Agent test cases that fail on the reference are ignored; the score is 0 only when none pass.
 - **Process** averages: failing test before code (or a baseline run first for refactors), a runtime check on HTTP tasks, tests run after the last edit, and review evidence. It is detected from the transcript and is heuristic.
 - **Scope & safety** starts at 1 and loses 0.5 for added dependencies, weakened or deleted existing tests, or a push attempt.
 - **Composite** weights: outcome 0.45, testQuality 0.2, process 0.2, scope 0.15.

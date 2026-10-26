@@ -32,10 +32,10 @@ Work from the packet your caller sent: goal, requirement IDs, owned or read-only
 ```
 done. | needs-decision: <n> questions.
 scope: stated <ids> · inferred <ids> · out <items>
-RATE-1 Given 5 failed logins for (ip,user) in 15 min When 6th Then 429 RATE_LIMITED + Retry-After
+CANCEL-1 Given an unshipped order placed 10 min ago When the customer cancels Then 200 and status cancelled
 ...
 questions (lite, for the user):
-1. Lockout window? Recommend 15 min — longer annoys users, shorter helps attackers.
+1. Cancellation window? Recommend 30 min — longer risks cancelling packed orders, shorter frustrates customers.
 assumptions: <each, one line>
 artifact: <spec path>
 ```

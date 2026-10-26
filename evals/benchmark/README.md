@@ -5,7 +5,8 @@ This benchmark answers one question with measured numbers: given the same model,
 | Arm | What loads |
 |---|---|
 | `baseline` | Claude Code as shipped: built-in skills only, no skill pack |
-| `e6` | This repository as a plugin, snapshotted with `git archive` at the run's commit |
+| `e6` | This repository as a plugin, snapshotted with `git archive` at the run's commit, without `evals/` |
+| `e6-prev` | The same, at the earlier commit `5e5a529` pinned in [`arms.json`](arms.json). Merge branches carrying it with a merge commit, not a squash, or that commit becomes unreachable and the arm cannot be built |
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers), pinned to a commit in [`arms.json`](arms.json) |
 
 The harness lives in [`scripts/run-benchmark.js`](../../scripts/run-benchmark.js) and [`scripts/lib/benchmark/`](../../scripts/lib/benchmark/). Published results: [docs/benchmark-results.md](../../docs/benchmark-results.md).
@@ -44,7 +45,7 @@ CI runs it.
 2. **Isolation.** The agent gets a new Claude config directory that holds only a copy of your credentials. The run uses:
    - an allowlisted environment, with no parent-session variables;
    - `--setting-sources project` and `--strict-mcp-config`;
-   - the arm's plugin via `--plugin-dir`.
+   - the arm's plugin via `--plugin-dir`, materialized in a temporary directory outside the repository. Local arms are a `git archive` without `evals/`, so no plugin carries hidden tests, reference solutions, or answer keys.
 
    The session's `init` event must list exactly the arm's plugins, with Claude Code built-ins allowed. Otherwise the run is marked `contaminated` and excluded.
 3. **Same prompt everywhere.** "Implement the change described in REQUEST.md … Follow AGENTS.md. Tell me when you are done."
@@ -115,4 +116,5 @@ Read results with these in mind:
 - **Heuristic process metrics.** Test-first, runtime, and review are detected from commands and tool calls. Unusual commands can be missed; spot-check traces before drawing conclusions about process.
 - **Mutation scoring** swaps in the reference interface file. Tests that only exercise new internal helpers can miss mutants, even when they are reasonable unit tests.
 - **Small n.** Agent runs are stochastic. Treat any difference whose interval crosses zero as inconclusive, and prefer 5 or more repetitions.
+- **Benchmark leakage.** A tool call that names `evals/benchmark`, a hidden test file, or `answers.md` marks the run `contaminated`. Skill and persona examples must not echo a task's answer key; check new examples against every `answers.md`. Runs published before this check existed did not have it (see [benchmark results](../../docs/benchmark-results.md)).
 - **Built-ins.** Claude Code's built-in skills (for example `code-review`, `debug`) are present in every arm, including the baseline.

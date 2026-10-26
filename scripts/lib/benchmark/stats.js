@@ -63,6 +63,14 @@ function diffCI(a, b, { iterations = 2000, seed = 1, level = 0.95 } = {}) {
   return { diff: mean(a) - mean(b), low: quantile(diffs, alpha), high: quantile(diffs, 1 - alpha) };
 }
 
+/** Bootstrap CI of the mean paired difference: pairs of [a, b] resampled together. */
+function pairedDiffCI(pairs, { iterations = 2000, seed = 1, level = 0.95 } = {}) {
+  if (!pairs.length) return { diff: NaN, low: NaN, high: NaN, n: 0 };
+  const diffs = pairs.map(([a, b]) => a - b);
+  const { mean: diff, low, high, n } = bootstrapCI(diffs, { iterations, seed, level });
+  return { diff, low, high, n };
+}
+
 /** Win/tie/loss of paired observations (same task and repetition), tolerance for ties. */
 function winTieLoss(pairs, tolerance = 1e-9) {
   const result = { win: 0, tie: 0, loss: 0 };
@@ -84,4 +92,4 @@ function shuffle(items, seed) {
   return copy;
 }
 
-module.exports = { mulberry32, mean, sd, quantile, bootstrapCI, diffCI, winTieLoss, shuffle };
+module.exports = { mulberry32, mean, sd, quantile, bootstrapCI, diffCI, pairedDiffCI, winTieLoss, shuffle };

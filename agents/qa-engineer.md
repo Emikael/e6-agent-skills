@@ -32,8 +32,8 @@ Gaps are findings on the contract's severity scale: an untested requirement or r
 
 ```
 done. | blocked: <rows>.
-RATE-1 limiter.test.js:12 "locks after 5" → pass; runtime curl ×6 → 429
-RATE-3 — no test for success reset → Required: add "success clears failures"
+CANCEL-1 cancel.test.js:12 "cancels within window" → pass; runtime curl → 200 cancelled
+CANCEL-3 — no test for shipped orders → Required: add "shipped order cannot be cancelled"
 checks: node --test → 18/18 pass
 sign-off: yes | no (2 rows open)
 ```

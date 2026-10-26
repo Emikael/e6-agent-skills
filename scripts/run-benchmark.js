@@ -21,7 +21,7 @@ const { execFileSync } = require('node:child_process');
 const { BENCH_DIR, loadTasks, validateTask, materializeTask } = require('./lib/benchmark/tasks');
 const { createIsolation, checkInit } = require('./lib/benchmark/isolation');
 const { agentArgs, textArgs, runCli, simulatorPrompt, parseSimulatorReply, judgePrompt, parseJudge } = require('./lib/benchmark/agents');
-const { parseStream, summarizeInvocation, processMetrics } = require('./lib/benchmark/trace');
+const { parseStream, summarizeInvocation, processMetrics, benchmarkAccess } = require('./lib/benchmark/trace');
 const { scoreRun } = require('./lib/benchmark/score');
 const { buildSummary, renderMarkdown } = require('./lib/benchmark/report');
 const { shuffle } = require('./lib/benchmark/stats');
@@ -72,20 +72,24 @@ function pluginName(dir) {
   throw new Error(`No plugin manifest found in ${dir}`);
 }
 
-/** Materialize each arm's plugin into outDir/arms/<id>; returns arm descriptors. */
-function prepareArms(armIds, outDir) {
+// Plugin content an agent may see. evals/ holds every task's hidden tests, reference
+// solutions, and answer keys, so it never ships with a local arm.
+const ARCHIVE_PATHSPEC = ['.', ':(exclude)evals'];
+
+/** Materialize each arm's plugin into armsDir/<id>; returns arm descriptors. */
+function prepareArms(armIds, armsDir) {
   const configs = JSON.parse(fs.readFileSync(path.join(BENCH_DIR, 'arms.json'), 'utf8'));
   const selected = armIds ? configs.filter(arm => armIds.includes(arm.id)) : configs;
   if (armIds && selected.length !== armIds.length) throw new Error(`Unknown arm in ${armIds.join(',')}`);
   return selected.map(arm => {
-    const dir = path.join(outDir, 'arms', arm.id);
+    const dir = path.join(armsDir, arm.id);
     const { source } = arm;
     if (source.type === 'none') return { ...arm, source: 'none', pluginDirs: [], expectedPlugins: [], hash: 'none' };
     fs.mkdirSync(dir, { recursive: true });
     let description;
     if (source.type === 'local') {
       const commit = execFileSync('git', ['rev-parse', source.ref || 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-      const archive = execFileSync('git', ['archive', '--format=tar', commit], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
+      const archive = execFileSync('git', ['archive', '--format=tar', commit, '--', ...ARCHIVE_PATHSPEC], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
       execFileSync('tar', ['-x', '-C', dir], { input: archive });
       description = `this repository @ \`${commit.slice(0, 10)}\``;
     } else if (source.type === 'git') {
@@ -110,19 +114,26 @@ async function runOne({ task, arm, rep, options, weights, scoring, runDir, budge
     task: task.id, arm: arm.id, rep, status: 'running', followups: [], cost: { agentUsd: 0, simulatorUsd: 0 },
     usage: { input: 0, output: 0, cacheRead: 0, cacheCreate: 0 }, numTurns: 0, durationMs: 0, invocations: 0,
   };
-  const { workspace, baselineSha } = materializeTask(task);
-  const isolation = createIsolation();
-  const simulatorCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-bench-sim-'));
   const started = Date.now();
   const calls = [];
   const exchanges = [];
+  let workspace = null;
+  let isolation = null;
+  let simulatorCwd = null;
   try {
+    let baselineSha;
+    ({ workspace, baselineSha } = materializeTask(task));
+    isolation = createIsolation();
+    simulatorCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-bench-sim-'));
     let sessionId = null;
     let input = options.mode === 'invoked' && arm.invoke_prefix ? `${arm.invoke_prefix}\n\n${task.config.prompt}` : task.config.prompt;
     const maxFollowups = task.config.max_followups ?? scoring.maxFollowups;
     for (let turn = 0; ; turn++) {
-      const remaining = options.perRunUsd - record.cost.agentUsd;
-      if (remaining <= 0.01) { record.reason = 'per-run budget reached'; break; }
+      const remaining = Math.min(
+        options.perRunUsd - record.cost.agentUsd - record.cost.simulatorUsd,
+        options.maxCostUsd - budget.spent,
+      );
+      if (remaining <= 0.01) { record.reason = 'cost budget reached'; break; }
       const result = await runCli({
         args: agentArgs({ model: options.model, effort: options.effort, pluginDirs: arm.pluginDirs, resume: sessionId, maxBudgetUsd: remaining.toFixed(2) }),
         input, cwd: workspace, isolation,
@@ -169,6 +180,12 @@ async function runOne({ task, arm, rep, options, weights, scoring, runDir, budge
       exchanges.push({ agent: summary.finalText, user: reply.message });
       input = reply.message;
     }
+    const leaks = benchmarkAccess(calls);
+    if (leaks.length) {
+      record.status = 'contaminated';
+      record.reason = `agent touched benchmark files: ${leaks.slice(0, 3).join('; ')}`;
+      return record;
+    }
     record.processInfo = processMetrics(calls, task.config);
     const score = scoreRun({ task, workspace, baselineSha, processInfo: record.processInfo, weights });
     fs.writeFileSync(path.join(runDir, 'diff.patch'), score.diff);
@@ -183,15 +200,22 @@ async function runOne({ task, arm, rep, options, weights, scoring, runDir, budge
   } finally {
     record.wallMs = Date.now() - started;
     fs.writeFileSync(path.join(runDir, 'run.json'), `${JSON.stringify(record, null, 2)}\n`);
-    try {
-      const worktrees = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd: workspace, encoding: 'utf8' })
-        .split('\n').filter(line => line.startsWith('worktree ')).map(line => line.slice(9)).filter(dir => path.resolve(dir) !== path.resolve(workspace));
-      for (const dir of worktrees) if (dir.startsWith(os.tmpdir())) fs.rmSync(dir, { recursive: true, force: true });
-    } catch { /* workspace may be gone */ }
-    fs.rmSync(workspace, { recursive: true, force: true });
-    fs.rmSync(simulatorCwd, { recursive: true, force: true });
-    isolation.cleanup();
+    if (workspace) cleanupWorkspace(workspace);
+    if (simulatorCwd) fs.rmSync(simulatorCwd, { recursive: true, force: true });
+    if (isolation) isolation.cleanup();
   }
+}
+
+function cleanupWorkspace(workspace) {
+  try {
+    const own = fs.realpathSync(workspace);
+    const tmp = fs.realpathSync(os.tmpdir());
+    const worktrees = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd: workspace, encoding: 'utf8' })
+      .split('\n').filter(line => line.startsWith('worktree ')).map(line => line.slice(9)).filter(dir => dir !== own);
+    // git prints resolved paths (/private/var/… on macOS), so compare against the resolved tmpdir.
+    for (const dir of worktrees) if (dir.startsWith(tmp)) fs.rmSync(dir, { recursive: true, force: true });
+  } catch { /* workspace may be gone */ }
+  fs.rmSync(workspace, { recursive: true, force: true });
 }
 
 async function pool(items, concurrency, worker) {
@@ -207,6 +231,13 @@ async function pool(items, concurrency, worker) {
   return results;
 }
 
+const JUDGE_DIFF_LIMIT = 30000;
+
+function truncateDiff(diff, limit = JUDGE_DIFF_LIMIT) {
+  if (diff.length <= limit) return diff;
+  return `${diff.slice(0, limit)}\n[diff truncated: ${diff.length - limit} of ${diff.length} characters omitted]`;
+}
+
 async function judgeRuns({ tasks, arms, records, outDir, options, seed }) {
   const judgments = [];
   const judgeDir = path.join(outDir, 'judge');
@@ -214,15 +245,15 @@ async function judgeRuns({ tasks, arms, records, outDir, options, seed }) {
   const isolation = createIsolation();
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-bench-judge-'));
   try {
-    for (const task of tasks) {
+    for (const [taskIndex, task] of tasks.entries()) {
       for (let rep = 1; rep <= options.reps; rep++) {
         const runs = records.filter(record => record.task === task.id && record.rep === rep && record.score);
         if (runs.length < 2) continue;
         const labels = ['A', 'B', 'C', 'D', 'E'].slice(0, runs.length);
-        const order = shuffle(runs, seed + rep * 101 + task.id.length);
+        const order = shuffle(runs, seed + rep * 101 + taskIndex * 7919);
         const candidates = order.map((run, i) => ({
           label: labels[i], arm: run.arm,
-          diff: fs.readFileSync(path.join(outDir, 'runs', task.id, run.arm, `r${rep}`, 'diff.patch'), 'utf8').slice(0, 30000),
+          diff: truncateDiff(fs.readFileSync(path.join(outDir, 'runs', task.id, run.arm, `r${rep}`, 'diff.patch'), 'utf8')),
         }));
         const result = await runCli({
           args: textArgs({ model: options.judgeModel || options.model, effort: options.effort }),
@@ -324,7 +355,17 @@ async function main(args = process.argv.slice(2)) {
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const outDir = path.resolve(options.out || path.join(BENCH_DIR, 'results', runId));
   fs.mkdirSync(outDir, { recursive: true });
-  const arms = prepareArms(list(options.arms), outDir);
+  // Plugins live outside the repository so no arm's --plugin-dir sits near evals/benchmark/tasks.
+  const armsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-bench-arms-'));
+  try {
+    await runBenchmark({ options, scoring, runOptions, tasks, runId, outDir, armsDir });
+  } finally {
+    fs.rmSync(armsDir, { recursive: true, force: true });
+  }
+}
+
+async function runBenchmark({ options, scoring, runOptions, tasks, runId, outDir, armsDir }) {
+  const arms = prepareArms(list(options.arms), armsDir);
   const cliVersion = execFileSync('claude', ['--version'], { encoding: 'utf8' }).trim().split(' ')[0];
   const metadata = {
     runId, startedAt: new Date().toISOString(), cliVersion, model: runOptions.model, effort: runOptions.effort, mode: runOptions.mode,
@@ -375,4 +416,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseOptions, hashTree, pluginName, prepareArms, runOne, loadRecords, writeReport };
+module.exports = { parseOptions, hashTree, pluginName, prepareArms, runOne, loadRecords, writeReport, truncateDiff, ARCHIVE_PATHSPEC };

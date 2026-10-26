@@ -27,7 +27,7 @@ Work from the packet your caller sent: goal, requirement IDs, owned or read-only
 
 ## Output
 
-Build: `done. src/limiter.js:1-40 — fixed-window limiter, injected clock. checks: node --test → pass`
+Build: `done. src/cancel.js:1-40 — cancellation window check, injected clock. checks: node --test → pass`
 
 Review: one line per finding, in the [team findings](../references/team.md#findings) shape.
 
