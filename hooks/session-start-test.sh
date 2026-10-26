@@ -38,15 +38,21 @@ function fixture(t, withJq = false) {
   return { tmp, pack, hook, bootstrap, content, bin };
 }
 
-function run(f) {
+function runRaw(f, env = {}) {
+  const base = { ...process.env, PATH: f.bin };
+  delete base.CURSOR_PLUGIN_ROOT;
   const result = spawnSync('/bin/bash', [f.hook], {
     cwd: f.tmp,
-    env: { ...process.env, PATH: f.bin },
+    env: { ...base, ...env },
     encoding: 'utf8',
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.equal(result.stderr, '');
-  const payload = JSON.parse(result.stdout);
+  return JSON.parse(result.stdout);
+}
+
+function run(f) {
+  const payload = runRaw(f);
   assert.equal(payload.hookSpecificOutput.hookEventName, 'SessionStart');
   return payload.hookSpecificOutput.additionalContext;
 }
@@ -81,6 +87,25 @@ for (const withJq of [false, true]) {
     assert.ok(context.length < 1500, 'bootstrap must remain compact');
   });
 }
+
+test('Cursor plugin registers the same bootstrap through its own hooks file', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, '.cursor-plugin', 'plugin.json'), 'utf8'));
+  assert.equal(manifest.skills, './skills/');
+  const hooksFile = path.join(root, manifest.hooks);
+  assert.ok(fs.existsSync(hooksFile), `${manifest.hooks} must exist`);
+  const config = JSON.parse(fs.readFileSync(hooksFile, 'utf8'));
+  assert.equal(config.hooks.sessionStart.length, 1, 'register one compact injection');
+  assert.match(config.hooks.sessionStart[0].command, /hooks\/session-start\.sh/);
+});
+
+test('emits Cursor additional_context when CURSOR_PLUGIN_ROOT is set', t => {
+  const f = fixture(t);
+  const payload = runRaw(f, { CURSOR_PLUGIN_ROOT: f.pack, CLAUDE_PLUGIN_ROOT: f.pack });
+  assert.equal(payload.hookSpecificOutput, undefined, 'emit only the field Cursor consumes');
+  assert.ok(payload.additional_context.includes(f.content.trimEnd()));
+  assert.ok(payload.additional_context.includes(f.pack));
+  assert.ok(payload.additional_context.length < 1500, 'bootstrap must remain compact');
+});
 
 test('missing bootstrap gives usable routing guidance without jq', t => {
   const f = fixture(t);

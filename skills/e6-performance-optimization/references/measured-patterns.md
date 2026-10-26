@@ -28,7 +28,7 @@ What is slow?
     └── Intermittent slowness? --> Check for lock contention, GC pauses, external deps
 ```
 
-### Step 2: Identify the Bottleneck
+### Identifying the Bottleneck
 
 Common bottlenecks by category:
 
@@ -50,7 +50,7 @@ Common bottlenecks by category:
 | CPU spikes | Synchronous heavy computation, regex backtracking | CPU profiling |
 | High latency | Missing caching, redundant computation, network hops | Trace requests through the stack |
 
-### Step 3: Fix Common Anti-Patterns
+### Common Anti-Patterns and Fixes
 
 #### N+1 Queries (Backend)
 
@@ -263,14 +263,22 @@ Cache what is expensive to produce and read far more often than it changes. Cach
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 let cachedConfig: AppConfig | null = null;
 let cacheExpiry = 0;
+let inFlight: Promise<AppConfig> | null = null;
 
 async function getAppConfig(): Promise<AppConfig> {
   if (cachedConfig && Date.now() < cacheExpiry) {
     return cachedConfig;
   }
-  cachedConfig = await db.config.findFirst();
-  cacheExpiry = Date.now() + CACHE_TTL;
-  return cachedConfig;
+  // Stampede guard: concurrent misses share one recompute instead of N.
+  // A rejection reaches every waiter and is never cached.
+  inFlight ??= db.config.findFirst()
+    .then((config) => {
+      cachedConfig = config;
+      cacheExpiry = Date.now() + CACHE_TTL;
+      return config;
+    })
+    .finally(() => { inFlight = null; });
+  return inFlight;
 }
 
 // HTTP caching headers for static assets
@@ -296,4 +304,4 @@ res.set('Cache-Control', 'public, max-age=300'); // Public example only
 
 **Guard against the stampede.** A hot key expires, every concurrent request misses together, and the origin takes the full load at once, which is how a cache turns into an outage instead of preventing one. Serve stale while a single request recomputes (`stale-while-revalidate`), or coalesce concurrent misses behind one in-flight promise so N waiters cause one recompute.
 
-**Do not cache:** anything whose staleness is a correctness bug (balances, permissions, inventory at checkout), or per-user data under a key that does not identify the user. See `../../../references/performance-checklist.md` for request coalescing, write strategies, negative caching, and the cache checklist.
+**Do not cache:** anything whose staleness is a correctness bug (balances, permissions, inventory at checkout), or per-user data under a key that does not identify the user. See the [performance checklist](../../../references/performance-checklist.md) for request coalescing, write strategies, negative caching, and the cache checklist.

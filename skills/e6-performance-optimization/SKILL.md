@@ -17,15 +17,13 @@ Measure a representative workload, locate its bottleneck, change one thing, then
 
 Do not optimize without evidence. Measure suspected problems before applying caches, indexes, or memoization.
 
-## Workflow handoff
-
-For standalone engineering work with no active workflow, load `using-e6-agent-skills`; otherwise keep the current coordinator. Return workload, measurements, acceptance/runtime checks, and keep/revert decision to it. Use `e6-caveman` for concise output and bounded delegation. Assign independent scoped measurement tasks with the same conditions and artifact; no nested agents or competing edits.
+**Not for:** an audit-only web performance review → `/webperf` (the web-performance-auditor persona); production dashboards, SLOs, and alerts → `e6-observability-and-instrumentation`.
 
 ## Process
 
 ### 1. Define success and load context
 
-Read project instructions, acceptance criteria, affected code/callers, profiling tools, deployment constraints, and prior attempt ledger. Use `e6-context-engineering` for missing context. Identify the user-facing metric, representative data/concurrency/device/network, comparison conditions, and success threshold before changing code.
+Read project instructions, acceptance criteria, affected code and callers, profiling tools, deployment constraints, and the prior attempt log. Identify the user-facing metric, representative data/concurrency/device/network, comparison conditions, and success threshold before changing code.
 
 Use project/SLA budgets. If none exist, establish a justified experimental target from the reported problem; ask only when a missing product decision blocks a correctness/performance tradeoff. Browser CWV targets describe p75 field measurements: LCP ≤2.5s, INP ≤200ms, CLS ≤0.1. They are not universal gates for backend or CLI work.
 
@@ -40,6 +38,7 @@ Choose the measurement for the surface:
 | Browser | Start the app; use `e6-browser-testing-with-devtools` for the affected load/interaction, network waterfall, main-thread work, layout shifts, and console errors. |
 | Backend/database | Representative local requests/query workload; traces, query timing/plans, pool waits, CPU or heap profiles. |
 | CLI/job/library | The actual entry point with representative input; elapsed time, allocations, memory, or throughput. |
+| LLM/AI call | Time to first token and total latency; streaming to the user; prompt caching for stable prefixes; batching independent requests; tokens per request against a budget. |
 
 Repeat samples with a budget; record warmup/cache state, data, concurrency, environment, and variance. Capture the exact command or interaction so the result is reproducible. Use existing synthetic and RUM/CrUX/APM data when available. Local synthetic measurements support conclusions; absent field access does not block a local fix or justify claiming improved real-user experience.
 
@@ -47,11 +46,11 @@ Repeat samples with a budget; record warmup/cache state, data, concurrency, envi
 
 Use profile evidence to pick the highest-impact bottleneck. Slow page load may be server waiting, critical resources, or bundle cost; sluggish interaction may be long tasks or render/layout work. Backend latency may be queries, pool waits, locks, CPU, GC, or external dependencies.
 
-Load only the matching section of [references/measured-patterns.md](references/measured-patterns.md): query batching/pagination, index plans/write cost, connection pools, image priority, render work, bundle splitting, or cache design. Use applicable sections of `../../references/performance-checklist.md` for deeper checks.
+Load only the matching section of [references/measured-patterns.md](references/measured-patterns.md): query batching/pagination, index plans/write cost, connection pools, image priority, render work, bundle splitting, or cache design. Use applicable sections of the [performance checklist](../../references/performance-checklist.md) for deeper checks.
 
 For indexes, compare representative reads and relevant write cost, not just plan shape. For caches, state complete keys (tenant/viewer/permissions/locale/flags), acceptable staleness, invalidation, capacity, and stampede protection. Do not cache a correctness obligation away. Public shared caching must never expose personalized data.
 
-Change one hypothesis at a time. Measure contributions before combining required changes. Keep scope reviewable.
+Change one hypothesis at a time and measure each contribution before combining changes.
 
 ### 4. Verify and keep or revert
 
@@ -65,13 +64,17 @@ Run unchanged correctness/acceptance checks and repeat the same workload under b
 
 Log every attempt: idea, baseline → result, variance, verdict, reason. A PR section or `PERF.md` is enough; read it before repeating an old experiment. Reverts must preserve unrelated user work.
 
-Re-run the affected local product path, including actual browser/computer interaction when relevant. Use `e6-code-review-and-quality` for changes and re-check fixes. Record exactly what ran; identify any missing environment or field evidence.
+Re-run the affected product path and review with `e6-code-review-and-quality`. Record exactly what ran and any missing environment or field evidence.
 
 ### 5. Guard the measured metric
 
 Add the smallest appropriate regression guard: a stable synthetic budget/benchmark, query-count check plus semantic assertions, or field monitoring tied to the actual metric. Repeat noisy measurements or use a median/trend so the guard is not flaky. Reuse the existing CI/telemetry stack.
 
 For deployed browsers, field monitoring validates user impact when available; CrUX's rolling window is confirmation, not an immediate alert. On a regression, return to a fresh baseline. Do not introduce universal bundle/API/Lighthouse budgets unrelated to acceptance requirements.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Include the workload, before/after numbers with variance, and the keep-or-revert decision for each attempt.
 
 ## Common Rationalizations
 
@@ -97,4 +100,4 @@ For deployed browsers, field monitoring validates user impact when available; Cr
 - [ ] Before/after comparison beats target and noise; unsupported changes were reverted.
 - [ ] The affected local runtime/browser path was exercised.
 - [ ] A relevant guard exists; attempts and review evidence were recorded.
-- [ ] Coordinator received results, actual limits, and any field follow-up.
+- [ ] Results, actual limits, and any field follow-up were returned.

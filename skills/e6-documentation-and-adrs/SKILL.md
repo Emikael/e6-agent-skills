@@ -1,6 +1,6 @@
 ---
 name: e6-documentation-and-adrs
-description: Use when documenting an architecture decision (ADR), recording the reasoning behind a design choice, changing public APIs or setup flows, shipping features that change user-facing behavior, or maintaining README, API documentation, changelog, and agent rules.
+description: Use when documenting an architecture decision (ADR), recording the reasoning behind a design choice, writing or updating a README, setup guide, API reference, runbook, or agent instruction file, or when a change makes existing docs inaccurate.
 ---
 
 # Documentation and ADRs
@@ -11,14 +11,11 @@ Document current behavior and the evidence behind decisions. Useful docs explain
 
 ## When to Use
 
-- Recording significant architectural decisions and expensive-to-reverse choices
-- Updating setup instructions, public API docs, or changed user-facing behavior
-- Capturing recurring explanations and relevant agent conventions
-- Avoid comments repeating obvious code and unnecessary docs for throwaway prototypes
+- Recording significant architectural decisions and expensive-to-reverse choices.
+- Updating setup instructions, public API docs, or docs that a change made inaccurate.
+- Updating agent-instruction files (`AGENTS.md`, `CLAUDE.md`, rule directories) when conventions change; they are documentation too.
 
-## Workflow Handoff
-
-For a standalone engineering change with no active workflow, load `using-e6-agent-skills` and `../../references/workflow-contract.md`. With an active coordinator, perform this documentation step, record evidence, and return to that coordinator. Do not restart the lifecycle. Use `e6-caveman` for concise prose and bounded delegation; preserve exact commands, identifiers, and uncertainty.
+**Not for:** comments that repeat obvious code, or docs for throwaway prototypes; designing the API contract itself → `e6-api-and-interface-design`; changelog entries and version bumps → `e6-git-workflow-and-versioning`.
 
 ## Process
 
@@ -26,7 +23,9 @@ For a standalone engineering change with no active workflow, load `using-e6-agen
 
 Identify affected audience/artifacts. Read existing docs/instructions, accepted task/spec, changed code/API types, manifests/scripts, and actual setup/runtime evidence. Distinguish agreed decision facts from assumptions. Do not invent motives, measured benefits, approvals, or rejected alternatives to fill a template.
 
-Before creating an ADR, inspect existing ADRs, `.adr-dir`, tooling, and instructions. Match location, extension/markup, filename sequence, status values, and headings. Existing conventions override defaults. Resolve conflicts from repository evidence; ask only if a material choice remains unresolved.
+Honor the project's documentation rules; they override this skill ([project rules](../../references/workflow-contract.md#project-rules-override-pack-defaults)). Some projects forbid committing plans or agent notes, or documenting obvious behavior; follow that rule rather than adding the doc.
+
+Before creating an ADR, inspect existing ADRs, `.adr-dir`, tooling, and instructions. Match location, markup, filename sequence, status values, and headings. Resolve conflicts from repository evidence; ask only if a material choice remains unresolved.
 
 ### 2. Record the Decision
 
@@ -58,7 +57,7 @@ Public REST/GraphQL/library docs need inputs, outputs, errors, auth/permissions,
 
 Inline comments explain non-obvious reasons/gotchas near affected code: ordering, lifetime, security assumptions, or costly edge cases. Prefer readable code for the what. Remove obsolete comments/commented-out code only in task scope. Keep valid TODOs with ownership/context where the project uses them; do not expand a docs task into unrelated implementation.
 
-For agents, update relevant rules, specs, and ADR pointers when conventions change. State stable instructions once and link supporting detail. Never copy this skill pack's repository-specific `AGENTS.md` into another project.
+Agent-instruction files follow the same standard: update them when conventions, commands, or boundaries change; state each stable instruction once and link supporting detail; keep them short, because agents load them on every task. Never copy this skill pack's repository-specific `AGENTS.md` into another project.
 
 ### 4. Execute the Documented Path
 
@@ -66,7 +65,11 @@ Run changed quick-start commands and executable snippets in a clean suitable env
 
 Validate changed links, markup/doc build, and generated API docs with project tooling. Compare API examples against real contract and representative runtime response, including relevant errors. For browser setup/user flows, use `e6-browser-testing-with-devtools` or available browser capability; for desktop flows, use available computer/runtime capability. Exercise the documented journey, not just compilation.
 
-If access/prerequisites prevent a check, complete independent work and report the exact unverified instruction/prerequisite. Do not mark docs tested from inspection alone. Return changed artifacts and actual results to the coordinator for acceptance/Definition of Done.
+If access or prerequisites prevent a check, complete independent work and report the exact unverified instruction. Do not mark docs tested from inspection alone.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Return changed docs before the Review phase, so review covers them and confirms the Definition of Done.
 
 ## Common Rationalizations
 
@@ -85,6 +88,7 @@ If access/prerequisites prevent a check, complete independent work and report th
 - Untested README/API examples inconsistent with scripts/contracts
 - Historical ADR deletion or broad cleanup during a scoped task
 - Docs repeating implementation instead of explaining usage/intent
+- A doc added that the project's rules forbid, or stale agent-instruction files left behind
 
 ## Verification
 
@@ -94,4 +98,4 @@ If access/prerequisites prevent a check, complete independent work and report th
 - [ ] Changed links, doc build, and generated/contract docs pass applicable checks
 - [ ] Unknown/blocked checks are explicit; no fabricated execution
 - [ ] Relevant public behavior and agent rules are current without unrelated cleanup
-- [ ] Coordinator receives changed artifacts, exact outcomes, and remaining gaps
+- [ ] Project documentation rules honored; changed artifacts, outcomes, and gaps returned

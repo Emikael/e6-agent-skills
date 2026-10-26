@@ -106,7 +106,7 @@ When the product needs a distinct visual direction, collect evidence before choo
 
 1. Search a trusted reference catalogue or use references supplied by the product team.
 2. Study two or three relevant screens. Record decisions about hierarchy, density, navigation, controls, responsive behavior, and interaction states.
-3. Turn those decisions into a short design contract before implementation. Name the screen's job, primary action, required states, responsive rules, and patterns to reject.
+3. Turn those decisions into the short design contract in [SKILL.md](../SKILL.md) before implementation: job, primary action, states, breakpoints, tokens and components, and rejected patterns.
 4. Rebuild the useful structure in the product's own components, tokens, content, and visual language. Never copy another product's branding, proprietary text, imagery, or exact layout.
 
 Use references as evidence, not as templates. If references are unavailable, document the assumptions and verify the result against the product's existing design system.
@@ -155,12 +155,12 @@ Don't skip heading levels. Don't use heading styles for non-heading content.
 ### Color
 
 - Use semantic color tokens: `text-primary`, `bg-surface`, `border-default` — not raw hex values
-- Ensure sufficient contrast (4.5:1 for normal text, 3:1 for large text)
+- Ensure sufficient contrast (4.5:1 for normal text, 3:1 for large text and UI components)
 - Don't rely solely on color to convey information (use icons, text, or patterns too)
 
-## Accessibility (WCAG 2.1 AA)
+## Accessibility (WCAG 2.2 AA)
 
-Every component must meet these standards:
+Every component must meet WCAG 2.2 AA. The patterns below cover the most common failures; the full audit list, including the 2.2 additions (focus not obscured, target size, dragging alternatives, accessible authentication), is in the [accessibility checklist](../../../references/accessibility-checklist.md).
 
 ### Keyboard Navigation
 
@@ -238,7 +238,7 @@ Design for mobile first, then expand:
 ">
 ```
 
-Test at these breakpoints: 320px, 768px, 1024px, 1440px.
+Test at the project's breakpoints; without a project matrix, use 320px, 768px, 1024px, and 1440px plus any width where the layout changes.
 
 ## Loading and Transitions
 

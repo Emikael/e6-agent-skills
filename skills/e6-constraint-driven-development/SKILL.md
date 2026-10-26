@@ -7,7 +7,7 @@ description: Use when a project has no written quality standards, when setting u
 
 ## Overview
 
-Record the project's quality bar and prove its checks enforce it. A report command is measurement; a gate also needs a threshold, failure policy, and verified failure exit.
+Record the project's quality bar and prove its checks enforce it. A report is a measurement; a gate also needs a threshold, a failure policy, and an observed failing exit.
 
 ## When to Use
 
@@ -15,75 +15,98 @@ Record the project's quality bar and prove its checks enforce it. A report comma
 - Agents weaken checks to finish work.
 - Coverage, performance, or accessibility budgets need a durable policy.
 
-Read and follow existing `CONSTRAINTS.md` rather than re-running setup. For a throwaway spike, apply the floor proportionately. Use `e6-ci-cd-and-automation` for pipeline construction.
+If `CONSTRAINTS.md` exists, read and follow it rather than re-running setup. For a throwaway spike, apply the floor proportionately.
+
+**Not for:** building or fixing pipelines → `e6-ci-cd-and-automation`; reviewing a PR or diff → `e6-code-review-and-quality`.
 
 ## Process
 
 ### 1. Detect before asking
 
-Follow `e6-context-engineering`. Inspect rules, manifests/lockfiles, test/coverage/lint/type config, CI, and launch commands. Measure baselines from existing output or one focused run. Do not ask for repo facts.
+Follow `e6-context-engineering`. Inspect rules, manifests, lockfiles, test/coverage/lint/type configuration, CI, and launch commands. Measure baselines from existing output or one focused run. Do not ask for repository facts.
 
-Resolve missing dimensions, modes, targets, and latency. Ask at most four questions, one at a time, with defaults. Accept delegation. Non-interactive work uses existing policy/floor and marks unconfigured dimensions pending.
+Then settle what the repository cannot tell you: which dimensions matter, whether each blocks or warns, target values, and how much latency the edit loop can afford. Ask at most four questions, one at a time, each with a default. Non-interactive work keeps existing policy plus the floor and marks the rest pending.
 
 ### 2. Write the contract
 
-Use root `CONSTRAINTS.md`: baseline source/date, target rationale, owner, mode. Link it from existing agent rules.
-
-The floor:
-
-- New suppressions require a justified, tracked exception.
-- No unfinished stubs or silently swallowed failures in completed work.
-- Test deletions, skips, and assertion changes must preserve acceptance coverage.
-- No secrets in source or check output.
-- Checks and thresholds are not weakened merely to pass the current change.
+Use root `CONSTRAINTS.md`, linked from agent rules. [floor-guard.md](references/floor-guard.md) reads this layout:
 
 ```markdown
-| Dimension | Baseline / target and reason | Mode | Verdict command | Scope / phase |
-|---|---|---|---|---|
-| Changed coverage | ≥80%; selected coverage policy | block | project diff-coverage check | changed executable lines / task, CI |
-| Page performance | LCP ≤2500ms; CWV good boundary | block | project performance gate | local representative route / verify |
+# Constraints
+Last reviewed: <date> by <owner>
+Baseline: <measurement source and date>
+
+## Floor
+- Suppressions: a new suppression needs an exception row.
+- Stubs: no unfinished stubs or swallowed failures in completed work.
+- Tests: deletions, skips, and assertion edits preserve acceptance coverage.
+- Secrets: none in source or check output.
+- Checks: checkers and thresholds are never weakened to pass a change.
+
+## Gates
+| Dimension | Rule | Reason | Mode | Verdict command | Scope / phase |
+|---|---|---|---|---|---|
+| Changed coverage | >= 80% of changed executable lines | team policy | block | `<diff-coverage script>` | task, CI |
+| Dependency security | no high or critical findings | policy | block | `<scanner script>` | CI |
+| Web vitals | LCP <= 2500 ms and CLS <= 0.1 | CWV "good" | block | `<lighthouse gate script>` | verify |
+| Accessibility | no critical or serious axe findings | policy | block | `<axe gate script>` | verify |
+
+## Pending
+- <dimension>: <why unavailable> → <next action>
+
+## Exceptions
+| ID | Rule | Path | Reason | Owner | Authority | Expires |
+|---|---|---|---|---|---|---|
+| E1 | no-explicit-any | src/legacy/sdk.ts | untyped vendor SDK | @owner | ADR-12 | 2027-01-20 |
+| W1 | bundle size | src/charts/ | chart library removal planned | @owner | tech lead | 2026-12-01 |
 ```
 
-Blocking rows name verdict commands. Unavailable checks record reason/next action. Exceptions name rule, path, reason, owner, authority, and expiry; default 90 days.
+- Floor bullets are `Label: rule`; gate rows are keyed on their first cell.
+- Each threshold has one number and a direction word (`>=`, `<=`, `under`) so loosening is detectable. Verdict commands sit in backticks so checker changes are flagged.
+- `E<n>` rows waive a blocking rule for one path; `W<n>` rows accept a warn-mode deviation. Each needs owner, authority, and expiry (default 90 days). The guard flags every new row.
+- Gate rows show pack defaults; use them only when the project has none, and record why. Tolerances need units. Never invent a baseline.
 
 ### 3. Wire real verdicts
 
-Reuse established tools/config. Verify versions/flags; install selected missing tools through project setup. Save repeatable verdicts in project scripts.
+Reuse established tools and configuration; verify versions and flags. Add a tool only when none can produce the verdict and authorization covers it; install it through project setup. Save verdicts as project scripts.
 
-| Dimension | Measurement/tool | What makes it a gate |
+| Dimension | Example tool | What makes it a gate |
 |---|---|---|
-| Types/lint | Existing compiler/linter | Its configured errors return nonzero; preserve compiler project graph |
-| Changed coverage | Existing lcov plus diff-cover or equivalent | Intersect executable changed lines with coverage; selected threshold returns nonzero |
-| Secrets | gitleaks with redaction | Finding returns nonzero; never print secret values |
-| Code security | Semgrep/project rules | Selected findings return nonzero; use supported failure flags or parse JSON |
-| Dependency security | osv-scanner | Filter actual report severity/CVSS by policy and return nonzero |
-| Web performance | Lighthouse JSON | Compare LCP `numericValue` to budget, CLS to budget, and fail on excess |
-| Web accessibility | axe JSON | Fail for selected impacts, e.g. critical/serious; report generation alone is insufficient |
-| Bundle/architecture/mutations | size-limit, dependency-cruiser, Stryker | Configure selected budget/rules/score and verify failure exits |
+| Types/lint | Existing compiler/linter | Errors exit nonzero; keep the compiler's project graph |
+| Changed coverage | lcov + diff-cover | Changed executable lines below threshold exit nonzero; `vitest --coverage` alone does not |
+| Secrets | gitleaks, redacted | Any finding exits nonzero; never print values |
+| Code/dependency security | Semgrep, osv-scanner | Filter by policy severity; exit defaults may not match it |
+| Web performance/accessibility | Lighthouse, axe JSON | Compare LCP `numericValue`/CLS to budget and fail on selected axe impacts; reports alone never fail |
+| Bundle/architecture/mutation | size-limit, dependency-cruiser, Stryker | Configure budget/rules/score; verify the failing exit |
 
-`vitest run --coverage` alone does not enforce changed-line coverage. Lighthouse alone does not fail for an exceeded LCP budget. Scanner exit defaults may not implement the selected severity policy. Verify, do not claim enforcement from a successful report command.
-
-Prove each blocking check: clean baseline, deliberate breach failing for the intended reason, restoration, clean result. Record command/exit/value/policy. Checker errors or missing data are unavailable evidence.
+Prove each blocking check: clean baseline, deliberate breach failing for the intended reason, restoration, clean result. Record command, exit, value, and policy. Checker errors or missing data are unavailable, not a pass.
 
 ### 4. Place checks by measured cost
 
-- Edit: cheap applicable checks; scope where tools support it.
-- Task/verify: focused tests, changed coverage, and actual local runtime.
-- Review/CI: slower security, mutation, architecture, and regression checks.
+- **Edit:** cheap checks, scoped to changed files where tools support it. When authorized, run them from the host's post-edit hook or a pre-commit hook.
+- **Task/verify:** focused tests, changed coverage, and the real local runtime.
+- **Review/CI:** slower security, mutation, architecture, and regression checks.
 
-Reuse coverage output. Measure latency; move slow checks outside the edit loop. Preserve whole-project compiler semantics. Scripts own commands; constraints reference them and record policy.
+Measure latency; move slow checks out of the edit loop. Scripts own commands; `CONSTRAINTS.md` references them.
 
-Start the local app before Lighthouse/axe; select representative routes/state/viewport/input. Scores supplement acceptance flows. For native/CLI/library surfaces, mark web metrics N/A and select relevant runtime/accessibility/performance evidence. Preserve requested quality dimensions.
+Start the local app before Lighthouse or axe, with representative routes, state, viewport, and input; scores supplement acceptance flows. For native, CLI, or library surfaces, mark web metrics `N/A: <reason>` and choose fitting runtime evidence.
 
 ### 5. Guard the bar and ratchet
 
-Compare constraints, checker configuration/scripts, schedules, suppressions, exceptions, and tests with the task baseline. Review assertion replacements against acceptance: replacing an assertion is not automatically weakening it.
+Compare constraints, checker scripts and configuration, schedules, suppressions, exceptions, and tests against the task baseline. A replaced assertion is not automatically weaker; judge it against acceptance.
 
-[floor-guard.md](references/floor-guard.md) is a shallow diff guard. Checker-change findings require policy review; paired assertion syntax does not prove equal strength. Inspect checker scripts/config/schedules and acceptance coverage separately. Adapt stack patterns; prove rule/path/line-only output with a harmless marker. Include staged, unstaged, untracked changes. Exit `2` is unavailable, not clean. Test violations and justified exceptions.
+Using [floor-guard.md](references/floor-guard.md), a shallow diff guard over staged, unstaged, and untracked changes:
 
-For unknown targets, record today's value and hold it. If a selected target fails today, state the gap, remediation, and ratchet option; do not claim a clean baseline. Wire comparison/policy before calling it enforced. Defaults: changed coverage 80%, no high dependency findings, LCP 2500ms, CLS 0.1, no critical/serious axe findings. Tolerance needs units, e.g. 0.5 percentage points. Record reasons; never invent baselines.
+- Adapt its patterns to the stack; test it on a real violation and a justified exception.
+- Plant a harmless marker violation and confirm the report shows only rule, path, and line.
+- Exit `0` means no pattern matched, not enforced policy; `1` needs review; `2` means it could not run, which is unavailable, never clean.
+- A checker-change finding needs policy review. Matching assertion counts do not prove equal strength.
 
-Floor-only bootstrapping is allowed. Track external gates pending; add independent checks for relevant dimensions.
+For an unknown target, record today's value and hold it. If a selected target fails today, state the gap, remediation, and ratchet plan. Floor-only bootstrapping is allowed; track external gates as pending.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). A constraints-only request stops at a verified `CONSTRAINTS.md` with pending gates listed; inside a build, return gate verdicts to the current phase.
 
 ## Common Rationalizations
 
@@ -96,20 +119,16 @@ Floor-only bootstrapping is allowed. Track external gates pending; add independe
 
 ## Red Flags
 
-- A blocking row without a tested failure exit.
-- Invented measurements, noisy guard findings accepted blindly, or source text in reports.
-- Slow checks in the edit loop or unavailable checks labeled passed.
+- A blocking row without a tested failing exit.
+- Invented measurements, guard findings accepted blindly, or source text in reports.
+- Slow checks in the edit loop, or unavailable checks labeled passed.
 - Quality standards lowered to finish one feature.
 
 ## Verification
 
 - [ ] Existing policy and measured baselines were read first.
-- [ ] Each configured gate has rationale, mode, scope, phase, and working verdict.
+- [ ] Each gate has rationale, mode, scope, phase, and a working verdict command.
 - [ ] Deliberate breaches fail; restored checks pass.
 - [ ] Local runtime dimensions use representative real inputs.
 - [ ] Floor adaptations, exceptions, redaction, and unavailable states are explicit.
-- [ ] Rules point to constraints; selected pending work returns to the coordinator.
-
-## Workflow Handoff
-
-For a standalone engineering task with no active workflow, use `using-e6-agent-skills`. Otherwise update the current phase evidence and return to its coordinator without recursively reloading the router. Follow [the workflow contract](../../references/workflow-contract.md). Use `e6-caveman` for concise user updates and delegation.
+- [ ] Agent rules point to `CONSTRAINTS.md`.

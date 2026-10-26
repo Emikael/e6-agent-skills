@@ -67,4 +67,4 @@ Generation also lets the tooling validate **semantics, not just shape**: confirm
 
 ## Status
 
-This document consolidates the discussion from [#272](https://github.com/addyosmani/agent-skills/pull/272), [#36](https://github.com/addyosmani/agent-skills/pull/36), and [#35](https://github.com/addyosmani/agent-skills/issues/35), all closed in favor of this approach. It is the single reference for per-agent configuration: it keeps the shared skills portable while documenting the advanced controls each agent offers as an opt-in. The script-based automation described above is a proposal pending agreement before any implementation.
+This document is the single reference for per-agent configuration: it keeps the shared skills portable while documenting the advanced controls each agent offers as an opt-in. The script-based automation described above is a proposal pending agreement before any implementation.

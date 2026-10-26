@@ -40,43 +40,36 @@ Once installed, verify with:
 
 Gemini CLI injects skill names and descriptions into the prompt automatically. When it recognizes a matching task, it asks permission to activate the skill before loading its full instructions.
 
-### Option 2: GEMINI.md (Persistent Context)
+### Option 2: Workflow Bootstrap in GEMINI.md (Persistent Context)
 
-For skills you want always loaded as persistent project context (rather than on-demand activation), add them to your project's `GEMINI.md`:
+To select the e6 coordinator on every engineering request, add the compact workflow bootstrap to your project's `GEMINI.md` with the installer. Run it from your project root; `--pack` is the complete clone, not an individual skill:
 
 ```bash
-# Create GEMINI.md with core skills as persistent context
-cat /path/to/e6-agent-skills/skills/e6-incremental-implementation/SKILL.md > GEMINI.md
-echo -e "\n---\n" >> GEMINI.md
-cat /path/to/e6-agent-skills/skills/e6-code-review-and-quality/SKILL.md >> GEMINI.md
+# Preview the block (default mode), then write it
+node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js --project . --pack /path/to/e6-agent-skills --host gemini
+node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js --project . --pack /path/to/e6-agent-skills --host gemini --write
 ```
 
-You can also modularize by importing from separate files:
+The installer writes one marked block containing the text of [`references/workflow-bootstrap.md`](../references/workflow-bootstrap.md) plus the installed pack, bootstrap, and router paths. It preserves the rest of `GEMINI.md`, and re-running it with `--write` after a pack upgrade updates only that block. `--check` exits non-zero when the block is missing or outdated. See [activation](workflow-activation.md#codex-opencode-and-gemini).
 
-```markdown
-# Project Instructions
-
-@skills/e6-test-driven-development/SKILL.md
-@skills/e6-incremental-implementation/SKILL.md
-```
+Do not paste whole `SKILL.md` bodies into `GEMINI.md`. It is loaded for every prompt; the bootstrap points to the coordinator, which loads skill bodies on demand.
 
 Use `/memory show` to verify loaded context, and `/memory reload` to refresh after changes.
 
-> **Skills vs GEMINI.md:** Skills are on-demand expertise that activate only when relevant, keeping your context window clean. GEMINI.md provides persistent context loaded for every prompt. Use skills for phase-specific workflows and GEMINI.md for always-on project conventions.
+> **Skills vs GEMINI.md:** Skills are on-demand expertise that activate only when relevant, keeping your context window clean. GEMINI.md provides persistent context loaded for every prompt. Use skills for phase-specific workflows and keep GEMINI.md to the bootstrap block and your own project conventions.
 
 ## Recommended Configuration
 
 ### Always-On (GEMINI.md)
 
-Add these as persistent context for every session:
-
-- `e6-incremental-implementation` — Build in small verifiable slices
-- `e6-code-review-and-quality` — Five-axis review
+Keep only the workflow bootstrap block from Option 2 (plus your own project conventions) in `GEMINI.md`. It selects `using-e6-agent-skills` and `e6-caveman` without loading any skill body.
 
 ### On-Demand (Skills)
 
-Install these as skills so they activate only when relevant:
+Install all of the pack's skills (Option 1) so the coordinator can load specialists when they apply, for example:
 
+- `e6-incremental-implementation` — Activates when building in small verifiable slices
+- `e6-code-review-and-quality` — Activates for five-axis review before merge
 - `e6-test-driven-development` — Activates when implementing logic or fixing bugs
 - `e6-spec-driven-development` — Activates when starting a new project or feature
 - `e6-frontend-ui-engineering` — Activates when building UI
@@ -92,38 +85,38 @@ Many skills in this pack leverage [Model Context Protocol (MCP)](https://modelco
 - `e6-browser-testing-with-devtools` uses the `chrome-devtools` MCP extension.
 - `e6-performance-optimization` can benefit from performance-related MCP tools.
 
-To enable these, ensure you have the relevant MCP extensions installed in your Gemini CLI configuration (`~/.gemini/config.json`).
+To enable these, ensure the relevant MCP servers or extensions are configured for Gemini CLI. MCP servers are declared under `mcpServers` in Gemini CLI settings: `~/.gemini/settings.json` for your user, or `.gemini/settings.json` in the project.
 
 ### Session Hooks
 
-Gemini CLI supports session lifecycle hooks. You can use these to automatically inject context or run validation scripts at the start of a session.
+Recent Gemini CLI versions offer session lifecycle hooks, configured in Gemini CLI settings (verify availability and schema on your version). The supported way to activate this pack in Gemini CLI is the `GEMINI.md` bootstrap block from Option 2.
 
-To replicate the `e6-agent-skills` experience from other tools, you can configure a `SessionStart` hook that reminds you of the available skills or loads a meta-skill. `hooks/session-start.sh` in this repo is a ready-made script for that: it prints the `using-e6-agent-skills` meta-skill as a standard `SessionStart` JSON envelope on stdout.
+`hooks/session-start.sh` in this repo is the Claude Code plugin's `SessionStart` hook. It injects the compact [`references/workflow-bootstrap.md`](../references/workflow-bootstrap.md) plus the installed pack, bootstrap, and router paths, wrapped in Claude Code's JSON envelope (`hookSpecificOutput.additionalContext`). It does not print the `using-e6-agent-skills` skill body; the coordinator loads that on demand. If you wire the script into a Gemini CLI hook, check that your version accepts that output format.
 
 ### Explicit Context Loading
 
-You can explicitly load any skill into your current session by referencing it with the `@` symbol in your prompt:
+You can explicitly load any skill into your current session by referencing its installed `SKILL.md` with the `@` symbol in your prompt. Adjust the path to where the skill is installed; this example uses a workspace-scope install:
 
 ```markdown
-Use the @skills/e6-test-driven-development/SKILL.md skill to implement this fix.
+Use the @.gemini/skills/e6-test-driven-development/SKILL.md skill to implement this fix.
 ```
 
 This is useful when you want to ensure a specific workflow is followed without waiting for auto-discovery.
 
 ## Slash Commands
 
-The repo ships 9 slash commands under `.gemini/commands/`: 8 lifecycle commands plus the `/webperf` specialist audit. Gemini CLI auto-discovers them when you run from the project root.
+The repo ships 9 slash commands under `.gemini/commands/`: 8 lifecycle commands plus the `/webperf` specialist audit. Gemini CLI auto-discovers them when you run from this repository's root. `gemini skills install` installs skills only; to use the commands in your own project, copy `.gemini/commands/*.toml` into that project's `.gemini/commands/` (or `~/.gemini/commands/` for every project).
 
 | Command | What it does |
 |---------|--------------|
 | `/spec` | Write a structured spec before writing code |
 | `/constraints` | Define and enforce the project's quality bar |
 | `/planning` | Break work into small, verifiable tasks |
-| `/build` | Implement the next task incrementally |
+| `/build` | Implement the next task incrementally; `/build auto` completes the whole requested plan |
 | `/test` | Run TDD workflow — red, green, refactor |
 | `/review` | Five-axis code review |
 | `/code-simplify` | Reduce complexity without changing behavior |
-| `/ship` | Pre-launch checklist via parallel persona fan-out |
+| `/ship` | Assess release readiness, resolve blockers, and ship only within existing authorization |
 | `/webperf` | Audit browser-facing apps for Core Web Vitals and performance issues |
 
 Each command invokes the corresponding skill automatically — no manual skill loading required.
@@ -132,7 +125,7 @@ Each command invokes the corresponding skill automatically — no manual skill l
 
 ## Usage Tips
 
-1. **Prefer skills over GEMINI.md** — Skills activate on demand and keep your context window focused. Only put skills in GEMINI.md if you want them always loaded.
+1. **Prefer skills over GEMINI.md** — Skills activate on demand and keep your context window focused. Keep GEMINI.md to the bootstrap block rather than full skill bodies.
 2. **Skill descriptions matter** — Each SKILL.md has a `description` field in its frontmatter that tells agents when to activate it. The descriptions in this repo are optimized for auto-discovery across all supported tools (Claude Code, Gemini CLI, etc.) by clearly stating both *what* the skill does and *when* it should be triggered.
 3. **Use agents for review** — Copy `agents/code-reviewer.md` content when requesting structured code reviews.
 4. **Combine with references** — Reference checklists from `references/` when working on specific quality areas like testing or performance.

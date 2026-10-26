@@ -72,7 +72,7 @@ When reviewing code — whether written by you, another agent, or a human:
 
 - **Don't rubber-stamp.** "LGTM" without evidence of review helps no one.
 - **Don't soften real issues.** "This might be a minor concern" when it's a bug that will hit production is dishonest.
-- **Quantify problems when possible.** "This N+1 query will add ~50ms per item in the list" is better than "this could be slow."
+- **Quantify problems from evidence.** "This loop issues one query per list item (N+1)" is better than "this could be slow." Cite a latency number only when you measured it.
 - **Push back on approaches with clear problems.** Sycophancy is a failure mode in reviews. If the implementation has issues, say so directly and propose alternatives.
 - **Accept override gracefully.** If the author has full context and disagrees, defer to their judgment. Comment on code, not people — reframe personal critiques to focus on the code itself.
 

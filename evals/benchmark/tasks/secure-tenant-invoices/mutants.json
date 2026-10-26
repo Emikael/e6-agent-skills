@@ -1,0 +1,6 @@
+[
+  { "name": "idor-no-tenant-check", "file": "server.js", "find": "String(item.id) === single[1] && item.tenantId === user.tenantId", "replace": "String(item.id) === single[1]" },
+  { "name": "leaks-internal-fields", "file": "server.js", "find": "send(res, 200, { invoice: toPublic(invoice) });", "replace": "send(res, 200, { invoice });" },
+  { "name": "forbidden-reveals-existence", "file": "server.js", "find": "        if (!invoice) {\n          send(res, 404, { error: { code: 'NOT_FOUND', message: 'Invoice not found' } });", "replace": "        if (!invoice) {\n          const exists = invoices.some(item => String(item.id) === single[1]);\n          send(res, exists ? 403 : 404, { error: { code: exists ? 'FORBIDDEN' : 'NOT_FOUND', message: 'Invoice not found' } });" },
+  { "name": "no-auth-on-single", "file": "server.js", "find": "      if (!user) {\n        send(res, 401,", "replace": "      if (!user && !single) {\n        send(res, 401," }
+]

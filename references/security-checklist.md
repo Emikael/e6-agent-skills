@@ -29,7 +29,7 @@ Before reaching for controls, spend five minutes thinking like an attacker:
 
 ## Pre-Commit Checks
 
-- [ ] No secrets in code (`git diff --cached | grep -i "password\|secret\|api_key\|token"`)
+- [ ] No secrets in staged changes (run a configured secret scanner with redacted output; never print matched values)
 - [ ] `.gitignore` covers: `.env`, `.env.local`, `*.pem`, `*.key`
 - [ ] `.env.example` uses placeholder values (not real secrets)
 
@@ -189,6 +189,9 @@ Authoritative checks: [npm install-scripts](https://docs.npmjs.com/cli/v11/comma
 - [ ] Registry signatures/provenance are verified where the manager supports it
 - [ ] Dependency lifecycle scripts are blocked before first execution and approved only through the pinned manager's native policy
 - [ ] New dependencies are reviewed for ownership, maintenance, release age, provenance, transitive graph, and typosquatting
+- [ ] An agent-suggested package is confirmed to exist, with real release history and the expected publisher, before it is added (slopsquatting)
+- [ ] An SBOM is produced for releases where customers or regulation require one
+- [ ] Push-protection secret scanning is enabled where the host supports it
 
 ## AI / LLM Security
 
@@ -197,7 +200,9 @@ For any feature that calls an LLM (chatbots, summarizers, agents, RAG):
 - [ ] Model output treated as untrusted — never into `eval`/SQL/shell/`innerHTML`/file paths
 - [ ] Prompt injection assumed; permissions enforced in code, not in the system prompt
 - [ ] Secrets, cross-tenant data, and full system prompts kept out of the context window
-- [ ] Tool/agent permissions scoped; destructive or irreversible actions require confirmation
+- [ ] Untrusted content (pages, issues, files, tool output) never selects which tool runs or what it targets
+- [ ] Tool/agent permissions least-privilege and scoped per tenant; destructive or irreversible tools require confirmation enforced in code
+- [ ] Tool calls logged with redacted arguments
 - [ ] Token, rate, and recursion/loop limits set (bound consumption)
 
 ## Error Handling
@@ -218,18 +223,20 @@ res.status(500).json({
 
 ## OWASP Top 10 Quick Reference
 
-| # | Vulnerability | Prevention |
+[OWASP Top 10:2025](https://owasp.org/Top10/2025/). SSRF now sits under A01; A03 and A10 are new categories.
+
+| ID | Category | Prevention |
 |---|---|---|
-| 1 | Broken Access Control | Auth checks on every endpoint, ownership verification |
-| 2 | Cryptographic Failures | HTTPS, strong hashing, no secrets in code |
-| 3 | Injection | Parameterized queries, input validation |
-| 4 | Insecure Design | Threat modeling, spec-driven development |
-| 5 | Security Misconfiguration | Security headers, minimal permissions, audit deps |
-| 6 | Vulnerable Components | The ecosystem's dependency audit (`npm audit`, `pip-audit`, ...), keep deps updated, minimal deps |
-| 7 | Auth Failures | Strong passwords, rate limiting, session management |
-| 8 | Data Integrity Failures | Verify updates/dependencies, signed artifacts |
-| 9 | Logging Failures | Log security events, don't log secrets |
-| 10 | SSRF | Validate/allowlist URLs, restrict outbound requests |
+| A01 | Broken Access Control | Auth check on every endpoint, resource ownership verification; allowlist outbound URLs and pin the connected address (SSRF) |
+| A02 | Security Misconfiguration | Security headers, secure defaults, minimal permissions, no debug output in production |
+| A03 | Software Supply Chain Failures | One committed lockfile, frozen installs, gated install scripts, provenance checks, SBOM where required |
+| A04 | Cryptographic Failures | HTTPS, strong password hashing, no secrets in code |
+| A05 | Injection | Parameterized queries, output encoding, schema validation |
+| A06 | Insecure Design | Threat modeling, abuse cases, spec-driven development |
+| A07 | Authentication Failures | Rate limiting, MFA where required, secure session management |
+| A08 | Software or Data Integrity Failures | Signed artifacts and updates, integrity checks on untrusted serialized data |
+| A09 | Security Logging and Alerting Failures | Log security events and alert on them; never log secrets |
+| A10 | Mishandling of Exceptional Conditions | Fail closed, handle errors explicitly, return generic error responses |
 
 ## OWASP Top 10 for LLMs Quick Reference
 

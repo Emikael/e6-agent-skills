@@ -15,19 +15,15 @@ Instrument operator questions alongside the feature. Verify emitted signals, con
 - Operators cannot explain a failure from current telemetry.
 - Logging, metrics, traces, alerts, or runbooks need implementation/review.
 
-For an active incident use `e6-debugging-and-error-recovery`; for measured slowness use `e6-performance-optimization`. Launch monitoring/rollback belongs to `e6-shipping-and-launch`.
-
-## Workflow handoff
-
-For standalone engineering work with no active workflow, load `using-e6-agent-skills`; otherwise keep the current coordinator. Instrument alongside implementation, then return signal acceptance, local/runtime evidence, and limits to it. Use `e6-caveman` for concise output and bounded delegation. Give independent inspections exact signal questions, paths, and safe test destination; no nested agents.
+**Not for:** diagnosing an active incident → `e6-debugging-and-error-recovery`; measured slowness → `e6-performance-optimization`; the release go/no-go, launch monitoring window, and rollback triggers → `e6-shipping-and-launch`.
 
 ## Process
 
 ### 1. Load context and define working signals
 
-Read instructions, acceptance criteria, feature/callers, existing telemetry/exporters, dashboards, SLOs, and operator requirements. Use `e6-context-engineering` for missing context. Reuse the supported stack.
+Read instructions, acceptance criteria, the feature and its callers, existing telemetry and exporters, dashboards, SLOs, and operator requirements. Reuse the supported stack.
 
-Write 2–4 on-call questions before editing: recovery, failure class, latency, duplicate actions, affected operations. Map questions to signals and observable acceptance cases: success/retry/exhaustion/errors, correlation, bounded dimensions, redaction, output inspection.
+Write 2–4 on-call questions before editing (recovery, failure class, latency, duplicate actions, affected operations), and map each to a signal and an observable acceptance case.
 
 ### 2. Pick signals deliberately
 
@@ -43,35 +39,41 @@ Emit only useful signals. Account for exporter failure, buffering, retention, an
 
 Use stable events and allowlisted structured fields. Levels: error for actionable failure/invariant violation, warn for handled degradation, info for significant business events, debug off by default in production. Never log secrets, tokens, full PII, auth headers, or whole bodies/raw gateway responses. Sanitize external error metadata.
 
-Generate correlation IDs or accept bounded, validated IDs under project trust policy. Never copy arbitrary request headers into logs/responses. Propagate context through HTTP/queue/async boundaries. For shared sinks, stamp an allowlisted `entryPoint` where the run starts and propagate it with the run ID; do not infer origin downstream.
+Generate correlation IDs, or accept bounded, validated ones under the project's trust policy; never copy arbitrary request headers into logs. Propagate context through HTTP/queue/async boundaries. For shared sinks, stamp an allowlisted `entryPoint` where the run starts and propagate it with the run ID; do not infer origin downstream.
 
-Example: `{ event: 'payment_retry_failed', requestId, entryPoint, provider, errorCode, attempt }`. Use safe identifiers/bounded error classes and existing schema; `entryPoint` avoids ECS `source.*`.
+Example: `{ event: 'payment_retry_failed', requestId, entryPoint, provider, errorCode, attempt }`. Name it `entryPoint` because `source.*` collides with ECS (Elastic Common Schema) fields.
 
 ### 4. Implement metrics and traces
 
 For new request/dependency paths use RED: rate, errors, duration. For relevant resources use USE: utilization, saturation, errors. Latency uses histograms with useful buckets and queryable percentiles, not averages alone. Define retry attempts vs final operations so counts mean what operators expect.
 
-Labels come from fixed sets: route template, method, status class, provider, bounded failure class. Never use user/tenant/request IDs, raw URLs, email, or error text as labels. Those safe, scoped details belong in logs/traces when policy allows.
+Labels come from fixed sets: route template, method, status class, provider, bounded failure class. Never use user/tenant/request IDs, raw URLs, email, or error text as labels.
 
 Use existing tracing or OpenTelemetry when choosing a new vendor-neutral stack. Initialize before instrumented modules, configure/export to the actual sink, and flush on bounded shutdown where needed. Propagate W3C trace context or the supported equivalent across services and queues; add manual spans only for meaningful internal work. Span attributes also need redaction and cardinality discipline.
 
-Choose a sampling topology explicitly. Low head sampling drops traces before a tail sampler can see errors; it cannot guarantee retaining all errors. For error retention via tail sampling, send candidate traces to that collector and document cost/buffering. Test context and export, beyond SDK initialization.
+Choose a sampling topology explicitly: low head sampling drops traces before a tail sampler sees errors, so it cannot guarantee error retention. Tail sampling needs candidate traces sent to its collector, with documented cost and buffering.
+
+**LLM calls:** emit one span per model call with the model, input and output token counts, latency, and finish reason, following the OpenTelemetry `gen_ai.*` semantic conventions. Never log raw prompts or outputs that contain user data; record sizes, hashes, or redacted excerpts under the data policy.
 
 ### 5. Make alerts actionable
 
-Page on symptoms users feel: error rate, latency, queue age, missing completion. Use cause/saturation signals for investigation or alerts when they predict an actionable failure under the project's SLOs. Reuse severity conventions; choose threshold and duration from SLO/historical evidence. Do not page on isolated retries/restarts.
+Page on symptoms users feel: error rate, latency, queue age, missing completion. Where an SLO exists, prefer multi-window error-budget burn-rate alerts (a fast window to page, a slow window to ticket) over static thresholds. Use cause and saturation signals for investigation, or alert on them only when they predict an actionable failure. Reuse severity conventions. Do not page on isolated retries or restarts.
 
-Every alert needs an owner/runbook: meaning, first check, action/escalation. Store with project runbooks and update after incidents. Dashboards answer defined questions.
+Every alert needs an owner and a runbook: meaning, first check, action, escalation. Dashboards answer defined questions.
 
-Test the rule and receiver in an authorized sandbox/test destination. Do not lower a live production threshold or notify people without existing authorization. Restore temporary configuration. A local receiver proves local wiring; actual production delivery remains a separate stated verification limit when unavailable.
+Test the rule and receiver against an authorized test destination. Never lower a live threshold or notify people without authorization; restore temporary configuration. A local receiver proves only local wiring.
 
 ### 6. Execute signal acceptance and inspect output
 
 Use `e6-test-driven-development` for meaningful telemetry contracts. Drive deterministic success, retry, exhaustion, timeout, or queue paths through the local entry point. Capture log/metric/span output or inspect the local collector; confirm event fields/counts, durations, bounded labels, correlation, and no sensitive data.
 
-For a browser feature, use `e6-browser-testing-with-devtools` to exercise the interaction and inspect client/server correlation, errors, and network behavior. With staging/collector access, diagnose a safe induced failure from telemetry and follow its request. Otherwise state local evidence and missing remote proof.
+For a browser feature, use `e6-browser-testing-with-devtools` to inspect client/server correlation and errors. With staging or collector access, diagnose a safe induced failure from telemetry alone; otherwise state the missing remote proof.
 
-Test alert evaluation/receiver and runbook links. Use `e6-code-review-and-quality`; fix findings and re-check signals. Load applicable sections of `../../references/observability-checklist.md` for deeper checks.
+Use `e6-code-review-and-quality`; fix findings and re-check signals. Load applicable sections of the [observability checklist](../../references/observability-checklist.md) for deeper checks.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Include the captured signal output and any remote delivery that remains unverified.
 
 ## Common Rationalizations
 
@@ -81,18 +83,19 @@ Test alert evaluation/receiver and runbook links. Use `e6-code-review-and-qualit
 | "SDK started, tracing works" | Export and context continuity need observed output. |
 | "ID labels make debugging easier" | Unbounded series can exhaust the metrics backend. |
 | "We'll test the pager later" | Verify safe rule/receiver wiring now and state remote limits. |
+| "Log the prompt for debugging" | Record model, tokens, and finish reason; keep user data out. |
 
 ## Red Flags
 
 - Prose-only logs, raw secrets/errors, unbounded labels, or unvalidated IDs.
 - Retries/external calls with no operation outcome signal.
 - Broken queue context, incompatible sampling claims, or unobserved exporter output.
-- Claimed staging/notification verification without execution; temporary thresholds left altered.
+- Claimed staging or notification verification without execution.
 
 ## Verification
 
 - [ ] Defined questions map to emitted signals and exercised acceptance paths.
-- [ ] Actual structured output is correlated, attributed, bounded, and redacted.
+- [ ] Actual structured output, including any LLM spans, is correlated, bounded, and redacted.
 - [ ] Metrics/spans export with correct counts, duration, and continuous context.
 - [ ] Alert rule/authorized test receiver/runbook were checked; temporary config restored.
-- [ ] Relevant local/browser behavior and review ran; coordinator received evidence and limits.
+- [ ] Relevant local/browser behavior and review ran; evidence and limits returned.

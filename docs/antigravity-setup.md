@@ -50,7 +50,7 @@ agy plugin list
 
 ## Lifecycle Workflows and Command Compatibility
 
-Antigravity's [migration tooling](https://www.agy.dev/docs/cli/gcli-migration/) reports the 9 legacy definitions in `commands/*.toml` as "converted to skills." In affected `agy` 1.1.x releases, validation succeeds but the converted wrappers do not appear in the slash-command or skill catalog. A successful `agy plugin validate` therefore confirms the files are well formed, not that `/build` and the other short wrappers are available. This is tracked in [e6-agent-skills #445](https://github.com/addyosmani/agent-skills/issues/445) and upstream in [antigravity-cli #788](https://github.com/google-antigravity/antigravity-cli/issues/788).
+Antigravity's [migration tooling](https://www.agy.dev/docs/cli/gcli-migration/) reports the 9 legacy definitions in `commands/*.toml` as "converted to skills." In affected `agy` 1.1.x releases, validation succeeds but the converted wrappers do not appear in the slash-command or skill catalog. A successful `agy plugin validate` therefore confirms the files are well formed, not that `/build` and the other short wrappers are available. This is tracked in Antigravity as [antigravity-cli #788](https://github.com/google-antigravity/antigravity-cli/issues/788).
 
 Use the native plugin skills directly while that importer limitation applies:
 
@@ -103,7 +103,8 @@ For example, when you ask the agent to:
 The plugin registers reusable subagent definitions from the `agents/` directory:
 - `code-reviewer.md`
 - `security-auditor.md`
-- `test-engineer.md`
+- `qa-engineer.md`
+- `web-performance-auditor.md`
 
 You can invoke these personas directly within your session or when delegating tasks using subagents.
 
@@ -112,7 +113,15 @@ You can invoke these personas directly within your session or when delegating ta
 ## Configuration & Customization
 
 ### Project-Specific Enforcements (`AGENTS.md`)
-To enforce strict skill compliance (e.g. requiring a spec or plan before writing code), copy or link `AGENTS.md` into the root of your workspace. Antigravity CLI reads this file to align the agent's behavior and planning phase with your team's conventions.
+To route engineering requests through the e6 coordinator (for example, so a spec or plan comes before code), add the compact [workflow bootstrap](../references/workflow-bootstrap.md) to your own workspace's `AGENTS.md`, with the installed pack path. Antigravity CLI reads this file to align the agent's behavior and planning phase with your team's conventions.
+
+The installer writes and updates that block without touching the rest of the file. It has no Antigravity-specific host; `--host codex` and `--host opencode` both target `AGENTS.md`. `--pack` must be a complete pack directory containing `references/` and `skills/`, such as your clone:
+
+```bash
+node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js --project . --pack /path/to/e6-agent-skills --host codex --write
+```
+
+Do not copy or link this repository's root `AGENTS.md`; it configures contributors to e6-agent-skills itself (see [CONTRIBUTING.md](../CONTRIBUTING.md#repo-scoped-files)).
 
 ### Sandbox Mode
 If you want to run skills or scripts with limited terminal permissions (for safety when running third-party validation tests), launch the CLI with:

@@ -15,11 +15,7 @@ Reduce the concepts a reader must hold while preserving the complete observable 
 - Review finds a concrete clarity or structural problem.
 - Recently changed code needs a scoped simplification pass.
 
-Not for already-clear code, unfamiliar code, a planned rewrite, or an unmeasured performance tradeoff. Understand first; use `e6-performance-optimization` when hot-path cost matters.
-
-## Workflow handoff
-
-For standalone engineering work with no active workflow, load `using-e6-agent-skills`; otherwise keep the current coordinator. Return baseline, acceptance, runtime, and review evidence to that coordinator and continue its next phase. Use `e6-caveman` for concise output and bounded delegation. Delegate only independent scoped inspection; provide exact paths and contracts, and do not nest agents.
+**Not for:** already-clear code, code you do not yet understand, or a planned rewrite; hot-path cost tradeoffs → `e6-performance-optimization`; finding bugs or judging a diff → `e6-code-review-and-quality`; fixing a discovered bug → `e6-debugging-and-error-recovery`.
 
 ## Process
 
@@ -27,7 +23,9 @@ For standalone engineering work with no active workflow, load `using-e6-agent-sk
 
 Read applicable instructions, acceptance criteria, the affected implementation, callers/exports, neighboring conventions, and relevant history. Use `e6-context-engineering` when context is missing. Identify inputs, result shape, errors, side effects, ordering, async behavior, serialization, and compatibility obligations. Understand why an abstraction or branch exists before deleting it.
 
-Scope to the requested/recently changed paths. Existing authorization covers proven cleanup in that scope; ask only for a missing product decision or scope change. Avoid adjacent renovation.
+Scope to the requested or recently changed paths. Existing authorization covers proven cleanup in that scope; ask only for a missing product decision or scope change. Avoid adjacent renovation.
+
+Never edit inside `simplify-ignore-start` / `simplify-ignore-end` blocks. Treat them as fixed contracts even when they look simplifiable; see [`hooks/SIMPLIFY-IGNORE.md`](../../hooks/SIMPLIFY-IGNORE.md).
 
 ### 2. Execute a baseline
 
@@ -48,8 +46,9 @@ For UI/integration code, record the existing local behavior needed for compariso
 | Generic/misleading names | Name the data or action using project vocabulary. |
 | Pass-through wrapper/speculative layer | Remove when callers, errors, identity, and extension contracts permit. |
 | Proven dead code | Remove after checking dynamic entry points, configuration, exports, and tests. |
+| Generated boilerplate: redundant try/catch, re-validation of already-typed inputs, narrating comments | Remove after confirming the contract (who validates, which errors callers expect). |
 
-Keep comments explaining why. Remove obvious narration. Preserve useful abstractions that name a concept or support an actual constraint; do not generalize for hypothetical future use.
+Keep comments that explain why. Preserve useful abstractions that name a concept or support an actual constraint; do not generalize for hypothetical future use.
 
 Check semantic hazards: object vs Map and value shape; truthiness vs nullish values; getters and evaluation count; short-circuit order; sparse arrays and iteration; async rejection vs synchronous throw; mutation and identity. Removing `async` or changing a collection representation is not automatically a refactor.
 
@@ -63,9 +62,13 @@ Run required broader gates once the affected changes are stable. Automate large 
 
 ### 5. Run the affected behavior and review the result
 
-Execute the affected local CLI/API/job/integration path. For rendered UI, start the app and use `e6-browser-testing-with-devtools` to compare the interaction, error states, console/network, and relevant visual behavior. Use the available browser/computer path appropriate to the product; report a real environment blocker if it cannot run.
+Execute the affected local CLI/API/job/integration path. For rendered UI, use `e6-browser-testing-with-devtools` to compare the interaction, error states, console/network, and visual behavior.
 
 Confirm the new structure reduces concepts and follows project conventions. Use `e6-code-review-and-quality` for the authorized change, address concrete findings, and verify any follow-up edits. Revert attempts that merely relocate complexity or make the contract less clear.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Report the baseline result before and after, so the caller can see behavior was preserved.
 
 ## Common Rationalizations
 
@@ -83,6 +86,7 @@ Confirm the new structure reduces concepts and follows project conventions. Use 
 - Modified tests to accept new behavior during a refactor.
 - New features, unrelated cleanup, or weaker error handling.
 - No executed baseline; speculative "a teammate would approve" used as evidence.
+- An edit inside a `simplify-ignore` block.
 
 ## Verification
 
@@ -91,4 +95,5 @@ Confirm the new structure reduces concepts and follows project conventions. Use 
 - [ ] Required build/lint checks pass with no new warnings.
 - [ ] The affected local runtime path was exercised, including browser interaction when relevant.
 - [ ] The diff is scoped, reduces complexity, and passed review.
-- [ ] Actual commands/results, runtime evidence, and any blocker were returned to the coordinator.
+- [ ] No `simplify-ignore` block was changed.
+- [ ] Actual commands, results, runtime evidence, and any blocker were returned to the caller.

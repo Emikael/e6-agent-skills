@@ -59,12 +59,14 @@ interface APIError {
 }
 
 // Status code mapping
-// 400 → Client sent invalid data
+// 400 → Malformed request: unparseable body, wrong content type,
+//       or a path/query parameter in the wrong format
 // 401 → Not authenticated
 // 403 → Authenticated but not authorized
 // 404 → Resource not found
 // 409 → Conflict (duplicate, version mismatch)
-// 422 → Validation failed (semantically invalid)
+// 422 → Well-formed but semantically invalid: parses, but fails
+//       validation rules (empty title, out-of-range value)
 // 500 → Server error (never expose internal details)
 ```
 
@@ -116,7 +118,7 @@ Extend interfaces without breaking existing consumers:
 interface CreateTaskInput {
   title: string;
   description?: string;
-  priority?: 'low' | 'medium' | 'high';  // Added later, optional
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';  // Added later, optional
   labels?: string[];                       // Added later, optional
 }
 
@@ -136,7 +138,7 @@ interface CreateTaskInput {
 | Query params | camelCase | `?sortBy=createdAt&pageSize=20` |
 | Response fields | camelCase | `{ createdAt, updatedAt, taskId }` |
 | Boolean fields | is/has/can prefix | `isComplete`, `hasAttachments` |
-| Enum values | UPPER_SNAKE | `"IN_PROGRESS"`, `"COMPLETED"` |
+| Enum values (on the wire and in types) | UPPER_SNAKE | `"IN_PROGRESS"`, `"COMPLETED"` |
 
 ### 6. Honouring an Idempotency Key
 
@@ -166,13 +168,13 @@ if (!(await db.exists(key))) {
 
 // ✓ let the unique constraint pick the winner
 try {
-  await db.insert({ key, state: 'in_progress', requestHash });
+  await db.insert({ key, state: 'IN_PROGRESS', requestHash });
 } catch (e) {
   if (isUniqueViolation(e)) return replayOrReject(key);
   throw e;
 }
 const result = await chargeCard(amount);
-await db.update({ key, state: 'succeeded', response: result });
+await db.update({ key, state: 'SUCCEEDED', response: result });
 ```
 
 The unique constraint *is* the mechanism. A store that cannot enforce uniqueness in one operation cannot back this.
@@ -221,7 +223,32 @@ POST   /api/tasks/:id/comments → Add a comment to a task
 
 ### Pagination
 
-Paginate list endpoints. Define bounds for page/pageSize, a stable sort with a tie-breaker, and behavior when concurrent writes occur. Choose cursor or offset pagination from consumer needs:
+Paginate list endpoints. Define a bounded page size, a stable sort with a tie-breaker (for example `createdAt` then `id`), and behavior under concurrent writes. Choose from consumer needs:
+
+- **Cursor** for feeds, large or frequently changing collections, and infinite scroll: stable under inserts, no deep-offset cost, but no jumping to page N.
+- **Offset** for small, slowly changing collections where users jump to numbered pages.
+
+**Cursor pagination:**
+
+```typescript
+// Request: first page, then pass nextCursor back unchanged
+GET /api/tasks?limit=20&sortBy=createdAt&sortOrder=desc
+GET /api/tasks?limit=20&sortBy=createdAt&sortOrder=desc&cursor=eyJjIjoiMjAyNS0wMS0wMSIsImkiOiJ0XzQyIn0
+
+// Response
+{
+  "data": [...],
+  "pagination": {
+    "limit": 20,
+    "nextCursor": "eyJjIjoiMjAyNS0wMS0wMSIsImkiOiJ0XzQyIn0",  // null on the last page
+    "hasMore": true
+  }
+}
+```
+
+The cursor is opaque to clients: encode the last row's sort key and tie-breaker (here `createdAt` and `id`), and query `WHERE (createdAt, id) < (:c, :i)` for a descending sort. Reject a cursor whose sort parameters differ from the request with 400.
+
+**Offset pagination:**
 
 ```typescript
 // Request
@@ -244,7 +271,7 @@ GET /api/tasks?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
 Use query parameters for filters:
 
 ```
-GET /api/tasks?status=in_progress&assignee=user123&createdAfter=2025-01-01
+GET /api/tasks?status=IN_PROGRESS&assignee=user123&createdAfter=2025-01-01
 ```
 
 ### Partial Updates (PATCH)
@@ -264,18 +291,18 @@ PATCH /api/tasks/123
 ```typescript
 // Good: Each variant is explicit
 type TaskStatus =
-  | { type: 'pending' }
-  | { type: 'in_progress'; assignee: string; startedAt: Date }
-  | { type: 'completed'; completedAt: Date; completedBy: string }
-  | { type: 'cancelled'; reason: string; cancelledAt: Date };
+  | { type: 'PENDING' }
+  | { type: 'IN_PROGRESS'; assignee: string; startedAt: Date }
+  | { type: 'COMPLETED'; completedAt: Date; completedBy: string }
+  | { type: 'CANCELLED'; reason: string; cancelledAt: Date };
 
 // Consumer gets type narrowing
 function getStatusLabel(status: TaskStatus): string {
   switch (status.type) {
-    case 'pending': return 'Pending';
-    case 'in_progress': return `In progress (${status.assignee})`;
-    case 'completed': return `Done on ${status.completedAt}`;
-    case 'cancelled': return `Cancelled: ${status.reason}`;
+    case 'PENDING': return 'Pending';
+    case 'IN_PROGRESS': return `In progress (${status.assignee})`;
+    case 'COMPLETED': return `Done on ${status.completedAt}`;
+    case 'CANCELLED': return `Cancelled: ${status.reason}`;
   }
 }
 ```

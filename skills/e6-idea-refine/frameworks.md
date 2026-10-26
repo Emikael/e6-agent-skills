@@ -1,6 +1,8 @@
 # Ideation Frameworks Reference
 
-Use these frameworks selectively. Pick the lens that fits the idea — don't mechanically run every framework. The goal is to unlock thinking, not to follow a checklist.
+Use these frameworks selectively during step 2 (Expand proportionately) or step 3 (Evaluate and converge) of SKILL.md. Pick the lens that fits the idea; don't run every framework. The goal is to unlock thinking, not to follow a checklist.
+
+The lenses named in SKILL.md map here: inversion and simplification → SCAMPER (Reverse, Eliminate); audience shift → SCAMPER (Put to other uses) and JTBD; combination → SCAMPER (Combine); constraint removal → Constraint-Based Ideation and First Principles; expert perspective → Analogous Inspiration.
 
 ## SCAMPER
 
@@ -21,7 +23,7 @@ A structured way to transform an existing idea by applying seven different opera
 Reframe problems as opportunities using the "How Might We..." format:
 
 - Start with an observation or pain point
-- Reframe it as "How might we [desired outcome] for [specific user] without [key constraint]?"
+- Reframe it as "How might we <desired outcome> for <specific user> within <constraint>?"
 - Generate multiple HMW framings of the same problem — different framings unlock different solutions
 
 **Good HMW qualities:**
@@ -83,7 +85,7 @@ Imagine the idea has already failed. Work backwards:
 3. For each failure mode: Is this preventable? Is this a signal the idea needs to change?
 4. Which failure modes are you willing to accept? Which ones would kill the project?
 
-**Best for:** Phase 2 evaluation. Stress-testing ideas that feel good but haven't been pressure-tested.
+**Best for:** Step 3 (Evaluate and converge). Stress-testing ideas that feel good but haven't been pressure-tested. Turn each preventable failure mode into an assumption with a pass/fail threshold.
 
 ## Analogous Inspiration
 
@@ -96,4 +98,4 @@ Look at how other domains solved similar problems:
 
 The key is finding *structural* similarities, not surface-level ones. "Uber for X" is surface-level. "A two-sided marketplace that solves a trust problem between strangers" is structural.
 
-**Best for:** Phase 1 expansion. Generating variations that feel genuinely different from the obvious approach.
+**Best for:** Step 2 (Expand proportionately). Generating variations that feel genuinely different from the obvious approach.

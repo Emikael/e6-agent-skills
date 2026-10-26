@@ -1,0 +1,37 @@
+[
+  {
+    "id": "baseline",
+    "label": "Baseline (no skills)",
+    "source": {
+      "type": "none"
+    }
+  },
+  {
+    "id": "e6",
+    "label": "e6-agent-skills",
+    "source": {
+      "type": "local",
+      "ref": "HEAD"
+    },
+    "invoke_prefix": "Use the e6-agent-skills workflow for this task."
+  },
+  {
+    "id": "e6-prev",
+    "label": "e6-agent-skills (previous)",
+    "source": {
+      "type": "local",
+      "ref": "5e5a529"
+    },
+    "invoke_prefix": "Use the e6-agent-skills workflow for this task."
+  },
+  {
+    "id": "superpowers",
+    "label": "Superpowers",
+    "source": {
+      "type": "git",
+      "url": "https://github.com/obra/superpowers.git",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b"
+    },
+    "invoke_prefix": "Use the Superpowers skills workflow for this task."
+  }
+]

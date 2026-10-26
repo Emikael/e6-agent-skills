@@ -1,0 +1,10 @@
+{
+  "id": "bugfix-split-cents",
+  "kind": "bugfix",
+  "title": "Installments lose cents",
+  "prompt": "Fix the bug described in REQUEST.md in this repository. You are authorized to make local code, test, and documentation changes and to run local commands. Follow AGENTS.md. Tell me when you are done.",
+  "interface": ["money.js"],
+  "visible_tests": ["money.test.js"],
+  "runtime": "library",
+  "max_followups": 4
+}

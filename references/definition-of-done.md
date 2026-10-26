@@ -40,6 +40,8 @@ The depth behind these items lives in `e6-code-review-and-quality` (the five-axi
 - [ ] Backward compatibility considered for any public interface or API change
 
 ### Documentation
+Update affected docs during Verify, before the Review phase confirms this checklist, so review covers them.
+
 - [ ] Public interfaces, APIs, and user-facing behavior are documented
 - [ ] Architectural decisions worth preserving are recorded (see `e6-documentation-and-adrs`)
 - [ ] Documentation describes the current state in timeless language, not the change history

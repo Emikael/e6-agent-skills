@@ -23,7 +23,7 @@ People often ask how **e6-agent-skills** relates to the two other "skills for co
 | **Entry points** | Slash commands mapped 1:1 to phases (`/spec` `/plan` `/build` `/test` `/review` `/code-simplify` `/ship`, plus `/webperf`), with a `/build auto` full-plan mode | Skill-chained pipeline (`brainstorming`, `writing-plans`, `subagent-driven-development`) | Slash commands (`/grill-me`, `/tdd`, `/to-prd`, `/diagnosing-bugs`, `/grill-with-docs`) |
 | **Distinctive mechanisms** | Anti-rationalization tables and Red Flags in every skill; parallel review **personas** in `/ship`; reference checklists; a **three-tier eval framework** in CI | Subagent-driven development with a task reviewer (spec + quality) and a fix loop; git-worktree isolation; skills-that-write-skills, pressure-tested | The **grilling** primitive (one question at a time, design-tree walking); seam-based TDD; explicit user-invoked vs model-invoked split; issue-tracker integration |
 | **Quality measurement** | Trigger, routing, and behavioral evals run against the catalog (in-repo, some in CI) | Pressure-testing methodology is core to its philosophy; the eval suite itself now lives in a separate repo | None shipped in-repo |
-| **Tooling reach** | Claude Code, Cursor, Gemini CLI, Antigravity, OpenCode, Windsurf, Copilot, Kiro, Codex, Command Code, plus the `npx skills` CLI | One of the widest and most actively churned surfaces: Claude Code, Codex, Cursor, Copilot CLI, OpenCode, Kimi, Factory Droid, Antigravity, Pi | Claude Code first, distributed via `npx skills add`; other agents work with varying fidelity |
+| **Tooling reach** | Claude Code (CLI and Desktop), Claude apps via skill ZIPs, Cursor (plugin or skills), Codex (CLI and app), Grok Build, Gemini CLI, Antigravity, OpenCode, Windsurf, Copilot, Kiro, Command Code, plus the `npx skills` CLI | One of the widest and most actively churned surfaces: Claude Code, Codex, Cursor, Copilot CLI, OpenCode, Kimi, Factory Droid, Antigravity, Pi | Claude Code first, distributed via `npx skills add`; other agents work with varying fidelity |
 | **Governance** | Actively reviews and merges community contributions; every skill ships an eval | Largely solo-authored; a substantial backlog of unmerged community PRs | Solo-authored, self-merged, developed openly in public |
 | **Best for** | Driving a feature through every phase with checks and evidence at each phase | Long, autonomous, reasoning-heavy or exploratory work | A pragmatic, battle-tested daily loop, strongest at requirements and TDD |
 
@@ -51,7 +51,7 @@ Its strengths are authenticity and sharpness: this is how one very good engineer
 
 ### e6-agent-skills (this project)
 
-e6-agent-skills organizes the **entire product lifecycle** as skills, with a meta-skill (`using-e6-agent-skills`) that routes a task to the right one. Every skill carries a **Common Rationalizations** table (the excuses an agent makes to skip a step, each rebutted) and **Red Flags**. Slash commands map one-to-one to lifecycle phases; `/build auto` runs a whole approved plan in one pass; and `/ship` fans out review **personas** (`code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor`) in parallel, then merges them into a go/no-go. It reuses existing authorization, requires acceptance/test/runtime/review evidence, and shares checklists including a Definition of Done, and runs across most major agent tools with a single-command install on several of them.
+e6-agent-skills organizes the **entire product lifecycle** as skills, with a meta-skill (`using-e6-agent-skills`) that routes a task to the right one. Every skill carries a **Common Rationalizations** table (the excuses an agent makes to skip a step, each rebutted) and **Red Flags**. Slash commands map one-to-one to lifecycle phases; `/build auto` runs a whole approved plan in one pass; and `/ship` fans out review **personas** (`code-reviewer`, `security-auditor`, `qa-engineer`, `web-performance-auditor`) in parallel, then merges them into a go/no-go. It reuses existing authorization, requires acceptance/test/runtime/review evidence, and shares checklists including a Definition of Done, and runs across most major agent tools with a single-command install on several of them.
 
 What is newer, and the current point of difference: a **three-tier eval framework** lives in the repo. Tier 1 checks structure, Tier 2 checks that each skill's description carries the vocabulary users actually say and that no two skills collide on routing (deterministic, runs in CI), and Tier 3 grades an agent's real execution trace against per-skill expectations. Neither of the other two ships that kind of in-repo, catalog-wide measurement today. The honest trade-off in the other direction: e6-agent-skills has less of a single opinionated "run" than Superpowers, and none of the three has yet solved durable cross-session memory well.
 
@@ -72,6 +72,45 @@ Summarized fairly:
 - Token efficiency was effectively identical; both replanned once.
 
 It is one developer's single-task experiment, not a benchmark, but it is a concrete illustration of the core trade-off: **broad disciplined validation versus heavy upfront reasoning**. His own conclusion is the honest one: pick the tool to the task.
+
+---
+
+## Coordinator vs. bootstrap: `using-e6-agent-skills` and `superpowers:using-superpowers`
+
+Both packs ship one "entry" skill that every other skill depends on. They solve different problems. This comparison reads Superpowers at commit [`2ce8aa15`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/using-superpowers/SKILL.md) (2026-10-21, MIT) and e6 as of this revision. Word counts are `wc -w` of each `SKILL.md`, table separators included.
+
+| | `superpowers:using-superpowers` | `using-e6-agent-skills` |
+|---|---|---|
+| **Job** | A gate: make the model check for and invoke skills before acting | A coordinator: own the request from context to verified handoff |
+| **Size** | 487 words | about 1,190 words, plus the shared workflow contract, read once per workflow |
+| **How it reaches the model** | Full body injected at session start inside `<EXTREMELY_IMPORTANT>` (Claude Code, Cursor, Codex, Copilot CLI, and other hosts) | A 102-word bootstrap injected at session start (Claude Code, Cursor plugin) or installed in `AGENTS.md`/`GEMINI.md`/`.mdc`; the body loads on demand |
+| **Trigger rule** | "If there is even a 1% chance a skill applies… you MUST invoke it", before any response, including clarifying questions | Classify every engineering request before the first tool action; ordinary conversation skips the workflow |
+| **Visible use** | Announce "Using [skill] to [purpose]"; one todo per checklist item | Announce "Using `<skill>` for `<purpose>`"; a workflow-state file for larger work |
+| **Ordering** | Process skills first (brainstorming, systematic-debugging), then implementation skills | A route table by request type (question, trivial, bug, feature, refactor, review, test, plan, CI/incident, release), plus conditional specialists |
+| **Human gates** | Brainstorming makes the user pick an approach and approve a design before planning; every path stops for approval before implementation | Reuses the authorization in the request; stops for host plan mode, a requested approval, a missing material decision, or an unauthorized consequential action |
+| **After routing** | Hands off to a pipeline: brainstorming → writing-plans → subagent-driven development or executing-plans → finishing a branch | Runs Understand → Plan → Build → Verify → Review → Handoff itself, loading specialists per phase |
+| **Small tasks** | Brainstorming scales its ceremony (spike, bounded, architectural) | A contract-defined fast path: inline criteria, no spec or plan files, still test-first |
+| **Subagents** | `<SUBAGENT-STOP>`: a dispatched subagent ignores the skill | Workers never load the coordinator; they follow a bounded packet and return evidence |
+| **Host differences** | Per-harness tool-mapping references | Capability-neutral wording; host specifics live in setup guides |
+| **Precedence** | User instructions (CLAUDE.md, AGENTS.md, direct requests) over skills over defaults | Host and user over project rules over pack defaults; project rules can relocate artifacts, limit suites, and gate browser use |
+| **Measurement** | A separate eval lab and pressure-testing methodology | In-repo structural and routing evals in CI, plus an opt-in behavioral runner |
+
+**Where Superpowers is stronger.** Activation. Injecting the full gate with forceful wording makes skill use very likely even on hosts with weak skill discovery. The mandatory design conversation also catches misunderstood requirements before any code exists.
+
+**Where e6 is stronger.** Lifecycle coverage and cost on ordinary work. One coordinator carries the request through tests, local runtime checks, and review without a mandatory approval at each step. Project rules can override pack defaults, and the always-on context stays near 100 words.
+
+**What e6 adopted in this revision.**
+- The one-line announcement.
+- A classification step before the first action.
+- An explicit worker rule (the analog of `SUBAGENT-STOP`).
+- Superpowers' Cursor `sessionStart` hook pattern.
+
+**What e6 deliberately did not adopt.**
+- The "1%" hard gate, which also fires on questions and small talk.
+- A mandatory design approval before every implementation. e6 honors approval when the host is in plan mode or the user asks for it.
+- Full-body injection. e6 keeps the always-on context small and accepts weaker activation on hosts without a bootstrap.
+
+**Can the two be compared directly?** Yes. The [benchmark](../evals/benchmark/README.md) runs both packs, plus a no-skills baseline, on the same tasks and model in isolated configurations. In the [results](benchmark-results.md), neither pack activated on its own on small tasks. Against the previous e6, Superpowers led when both were explicitly invoked. In a head-to-head with the revised e6 (third pass), e6 leads on the plain request: composite 0.83 vs 0.80, an interval that crosses zero, and the blind judge preferred e6 in 84% of tasks. When both are invoked, they tie at 0.84, and both beat the baseline. e6 costs more per run. Small tasks and one model limit these conclusions; see the threats to validity.
 
 ---
 
@@ -97,7 +136,7 @@ The at-a-glance table tells you how they are shaped. This is how to choose in pr
 
 ### Concrete scenarios
 
-- *"Ship a new endpoint with auth, tests, and a security pass before merge."* e6-agent-skills: `/spec` to `/ship`, with the security-auditor and test-engineer personas fanning out at the end.
+- *"Ship a new endpoint with auth, tests, and a security pass before merge."* e6-agent-skills: `/spec` to `/ship`, with the security-auditor and qa-engineer personas fanning out at the end.
 - *"Refactor a gnarly subsystem overnight and review it in the morning."* Superpowers: hand it the plan, let subagent-driven development and the task reviewer run.
 - *"I have a vague idea and keep letting the agent guess the requirements."* Pocock's `grill-me` (or e6-agent-skills' `e6-interview-me`) to pin down intent before any code.
 - *"Fix one clear bug, test-first."* Any of them; reach for the lightest one you already have installed.

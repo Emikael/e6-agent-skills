@@ -1,0 +1,8 @@
+[
+  { "name": "inverted-filter", "file": "server.js", "find": "report.status === status", "replace": "report.status !== status" },
+  { "name": "empty-value-accepted", "file": "server.js", "find": "if (!url.searchParams.has('status')) {", "replace": "if (!url.searchParams.get('status')) {" },
+  { "name": "wrong-error-code", "file": "server.js", "find": "code: 'INVALID_STATUS'", "replace": "code: 'BAD_REQUEST'" },
+  { "name": "order-lost", "file": "server.js", "find": "reports.filter(report => report.status === status)", "replace": "reports.filter(report => report.status === status).sort((a, b) => a.id - b.id)" },
+  { "name": "case-insensitive", "file": "server.js", "find": "const status = url.searchParams.get('status');", "replace": "const status = url.searchParams.get('status').toLowerCase();" },
+  { "name": "invalid-returns-200", "file": "server.js", "find": "res.statusCode = 400;", "replace": "res.statusCode = 200;" }
+]

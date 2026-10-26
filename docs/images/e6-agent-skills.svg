@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1672" height="941" viewBox="0 0 1672 941" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>e6-agent-skills: the using-e6-agent-skills Tech Lead runs Understand, Plan, Build, Verify, Review, and Handoff with a specialist team, traceability, and concise communication</title>
+  <defs>
+    <style>
+      .title { font-size: 92px; font-weight: 800; fill: #0F172A; letter-spacing: -2px; }
+      .subtitle { font-size: 34px; font-weight: 600; fill: #334155; }
+      .badge { font-size: 28px; font-weight: 700; fill: #0F172A; }
+      .coord { font-size: 28px; font-weight: 700; fill: #0F172A; }
+      .coord-sub { font-size: 18px; font-weight: 500; fill: #1E3A8A; }
+      .card-title { font-size: 28px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .card-sub { font-size: 18px; font-weight: 500; fill: #475569; text-anchor: middle; }
+      .num { font-size: 17px; font-weight: 700; fill: #FFFFFF; text-anchor: middle; }
+      .band-title { font-size: 22px; font-weight: 700; }
+      .band-text { font-size: 19px; font-weight: 500; }
+      .chip { font-size: 18px; font-weight: 600; fill: #312E81; text-anchor: middle; }
+      .icon { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .link { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="1672" height="941" fill="#FBFAF7"/>
+
+  <text x="64" y="118" class="title">e6-agent-skills</text>
+  <text x="68" y="176" class="subtitle">One request. A Tech Lead and a specialist team, end to end.</text>
+
+  <rect x="1176" y="58" width="434" height="72" rx="36" fill="#D9F2EE"/>
+  <g transform="translate(1202 70)" class="icon" stroke="#0F766E">
+    <circle cx="24" cy="14" r="7"/>
+    <path d="M10 44c0-9 6-15 14-15s14 6 14 15"/>
+    <circle cx="8" cy="18" r="5"/>
+    <path d="M0 40c0-6 3-10 8-11"/>
+    <circle cx="40" cy="18" r="5"/>
+    <path d="M48 40c0-6-3-10-8-11"/>
+  </g>
+  <text x="1266" y="104" class="badge">26 skills · 10 personas</text>
+
+  <!-- coordinator -->
+  <g class="link">
+    <path d="M500 238 H220 Q196 238 196 262 V330" stroke="#3B82F6"/>
+    <path d="M500 270 H476 Q452 270 452 294 V330" stroke="#EF4444"/>
+    <path d="M708 294 V330" stroke="#F59E0B"/>
+    <path d="M964 294 V330" stroke="#16A34A"/>
+    <path d="M1172 270 H1196 Q1220 270 1220 294 V330" stroke="#6366F1"/>
+    <path d="M1172 238 H1452 Q1476 238 1476 262 V330" stroke="#0D9488"/>
+  </g>
+  <g>
+    <circle cx="196" cy="330" r="6" fill="#3B82F6"/>
+    <circle cx="452" cy="330" r="6" fill="#EF4444"/>
+    <circle cx="708" cy="330" r="6" fill="#F59E0B"/>
+    <circle cx="964" cy="330" r="6" fill="#16A34A"/>
+    <circle cx="1220" cy="330" r="6" fill="#6366F1"/>
+    <circle cx="1476" cy="330" r="6" fill="#0D9488"/>
+  </g>
+  <rect x="500" y="208" width="672" height="88" rx="14" fill="#EAF3FF" stroke="#3B82F6" stroke-width="2.5"/>
+  <g transform="translate(526 228)" class="icon" stroke="#1D4ED8">
+    <circle cx="24" cy="8" r="7"/>
+    <circle cx="8" cy="40" r="7"/>
+    <circle cx="40" cy="40" r="7"/>
+    <path d="M24 15v10M24 25L10 34M24 25l14 9"/>
+  </g>
+  <text x="594" y="246" class="coord">using-e6-agent-skills · Tech Lead</text>
+  <text x="594" y="276" class="coord-sub">Routes the request · staffs by surface · owns it to handoff</text>
+
+  <!-- phase cards -->
+  <g transform="translate(78 330)">
+    <rect width="236" height="196" rx="16" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#3B82F6"/><text x="30" y="36" class="num">1</text>
+    <g transform="translate(94 22)" class="icon" stroke="#1D4ED8">
+      <path d="M8 4h18l10 10v30H8z"/><path d="M26 4v10h10"/><path d="M14 22h14M14 29h8"/>
+      <circle cx="33" cy="33" r="7" fill="#EFF6FF"/><path d="M38 38l7 7"/>
+    </g>
+    <text x="118" y="116" class="card-title">Understand</text>
+    <text x="118" y="148" class="card-sub">Criteria AC-n</text>
+    <text x="118" y="174" class="card-sub">Asks material values</text>
+  </g>
+  <g transform="translate(334 330)">
+    <rect width="236" height="196" rx="16" fill="#FEF2F2" stroke="#EF4444" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#EF4444"/><text x="30" y="36" class="num">2</text>
+    <g transform="translate(94 22)" class="icon" stroke="#B91C1C">
+      <rect x="6" y="4" width="36" height="40" rx="4"/>
+      <rect x="12" y="11" width="6" height="6"/><rect x="12" y="21" width="6" height="6"/><rect x="12" y="31" width="6" height="6"/>
+      <path d="M23 14h13M23 24h13M23 34h9"/>
+    </g>
+    <text x="118" y="116" class="card-title">Plan</text>
+    <text x="118" y="148" class="card-sub">Vertical slices</text>
+    <text x="118" y="174" class="card-sub">Traceability matrix</text>
+  </g>
+  <g transform="translate(590 330)">
+    <rect width="236" height="196" rx="16" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#F59E0B"/><text x="30" y="36" class="num">3</text>
+    <g transform="translate(94 22)" class="icon" stroke="#B45309">
+      <rect x="2" y="6" width="44" height="36" rx="4"/><path d="M2 14h44"/>
+      <path d="M18 22l-6 6 6 6M30 22l6 6-6 6"/>
+    </g>
+    <text x="118" y="116" class="card-title">Build</text>
+    <text x="118" y="148" class="card-sub">Failing test first</text>
+    <text x="118" y="174" class="card-sub">Clean, no narration</text>
+  </g>
+  <g transform="translate(846 330)">
+    <rect width="236" height="196" rx="16" fill="#F0FDF4" stroke="#16A34A" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#16A34A"/><text x="30" y="36" class="num">4</text>
+    <g transform="translate(94 22)" class="icon" stroke="#15803D">
+      <rect x="2" y="4" width="38" height="32" rx="4"/>
+      <path d="M9 14l6 5-6 5M18 26h8"/>
+      <circle cx="37" cy="36" r="9" fill="#16A34A"/>
+      <path d="M34.5 31.5v9l7-4.5z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5"/>
+    </g>
+    <text x="118" y="116" class="card-title">Verify</text>
+    <text x="118" y="148" class="card-sub">Checks + runtime</text>
+    <text x="118" y="174" class="card-sub">Observed evidence</text>
+  </g>
+  <g transform="translate(1102 330)">
+    <rect width="236" height="196" rx="16" fill="#EEF2FF" stroke="#6366F1" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#6366F1"/><text x="30" y="36" class="num">5</text>
+    <g transform="translate(94 22)" class="icon" stroke="#4338CA">
+      <path d="M24 3l17 6v13c0 11-7 18-17 23C14 40 7 33 7 22V9z"/>
+      <path d="M16 24l6 6 11-11"/>
+    </g>
+    <text x="118" y="116" class="card-title">Review</text>
+    <text x="118" y="148" class="card-sub">Specialists in parallel</text>
+    <text x="118" y="174" class="card-sub">Findings by severity</text>
+  </g>
+  <g transform="translate(1358 330)">
+    <rect width="236" height="196" rx="16" fill="#F0FDFA" stroke="#0D9488" stroke-width="2.5"/>
+    <circle cx="30" cy="30" r="16" fill="#0D9488"/><text x="30" y="36" class="num">6</text>
+    <g transform="translate(94 22)" class="icon" stroke="#0F766E">
+      <path d="M6 22l18-8 18 8v18l-18 8-18-8z"/><path d="M6 22l18 8 18-8M24 30v18"/>
+      <path d="M24 2v12M19 7l5-5 5 5"/>
+    </g>
+    <text x="118" y="116" class="card-title">Handoff</text>
+    <text x="118" y="148" class="card-sub">Every row closed</text>
+    <text x="118" y="174" class="card-sub">Final explanation</text>
+  </g>
+
+  <g class="link" stroke-width="3">
+    <path d="M318 428h12m-5-5l5 5-5 5" stroke="#3B82F6"/>
+    <path d="M574 428h12m-5-5l5 5-5 5" stroke="#EF4444"/>
+    <path d="M830 428h12m-5-5l5 5-5 5" stroke="#F59E0B"/>
+    <path d="M1086 428h12m-5-5l5 5-5 5" stroke="#16A34A"/>
+    <path d="M1342 428h12m-5-5l5 5-5 5" stroke="#6366F1"/>
+  </g>
+
+  <!-- specialist team -->
+  <rect x="62" y="548" width="1548" height="132" rx="16" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="2"/>
+  <text x="86" y="586" class="band-title" fill="#4C1D95">Specialist team</text>
+  <text x="270" y="586" class="band-text" fill="#5B21B6">staffed by surface · briefed in caveman ultra · return evidence with confidence</text>
+  <g>
+    <rect x="78" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="157" y="635" class="chip">Product Owner</text>
+    <rect x="248" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="327" y="635" class="chip">UI/UX Designer</text>
+    <rect x="418" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="497" y="635" class="chip">Backend</text>
+    <rect x="588" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="667" y="635" class="chip">Frontend</text>
+    <rect x="758" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="837" y="635" class="chip">QA Engineer</text>
+    <rect x="928" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="1007" y="635" class="chip">Security</text>
+    <rect x="1098" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="1177" y="635" class="chip">SRE</text>
+    <rect x="1268" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="1347" y="635" class="chip">Code Reviewer</text>
+    <rect x="1438" y="604" width="158" height="50" rx="25" fill="#FFFFFF" stroke="#C4B5FD" stroke-width="2"/><text x="1517" y="635" class="chip">Web Perf</text>
+  </g>
+
+  <!-- traceability -->
+  <rect x="62" y="698" width="1548" height="60" rx="14" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="2"/>
+  <g transform="translate(84 712)" class="icon" stroke="#047857" stroke-width="2.5">
+    <rect x="1" y="1" width="30" height="30" rx="4"/><path d="M1 11h30M1 21h30M12 1v30"/>
+  </g>
+  <text x="130" y="736" class="band-title" fill="#065F46">Traceability</text>
+  <text x="290" y="736" class="band-text" fill="#047857">AC-1 → test → code → runtime check  ·  no open row at handoff</text>
+
+  <!-- caveman -->
+  <rect x="62" y="772" width="1548" height="60" rx="14" fill="#EEF0FF" stroke="#C7D2FE" stroke-width="2"/>
+  <g transform="translate(84 786)" class="icon" stroke="#4338CA" stroke-width="2.5">
+    <path d="M3 3h26v18H14l-7 7v-7H3z"/><path d="M9 10h14M9 15h9"/>
+  </g>
+  <text x="130" y="810" class="band-title" fill="#312E81">e6-caveman</text>
+  <text x="290" y="810" class="band-text" fill="#3730A3">concise to you  ·  ultra between agents  ·  exact commands, numbers, and risks kept</text>
+
+  <!-- on demand + release -->
+  <rect x="62" y="852" width="1160" height="60" rx="14" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>
+  <text x="86" y="890" class="band-title" fill="#9A3412">On demand</text>
+  <text x="230" y="890" class="band-text" fill="#7C2D12">API  ·  UI  ·  Security  ·  Performance  ·  Observability  ·  CI/CD  ·  Migrations  ·  Docs</text>
+  <rect x="1240" y="852" width="370" height="60" rx="14" fill="#F0FDFA" stroke="#0D9488" stroke-width="2" stroke-dasharray="7 6"/>
+  <g transform="translate(1264 866)" class="icon" stroke="#0F766E" stroke-width="2.5">
+    <path d="M16 2c7 3 11 10 10 18l-6 6h-8l-6-6C5 12 9 5 16 2z"/><circle cx="16" cy="13" r="3"/><path d="M10 26l-4 5M22 26l4 5"/>
+  </g>
+  <text x="1308" y="890" class="band-title" fill="#0F766E">Release when authorized</text>
+</svg>

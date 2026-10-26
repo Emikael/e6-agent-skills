@@ -26,6 +26,10 @@
       {
         "prompt": "Write integration tests for the payments API",
         "owner": "e6-test-driven-development"
+      },
+      {
+        "prompt": "Review this pull request for correctness before we merge it",
+        "owner": "e6-code-review-and-quality"
       }
     ]
   },

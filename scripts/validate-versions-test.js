@@ -11,6 +11,7 @@ const manifestPaths = [
   "plugin.json",
   ".codex-plugin/plugin.json",
   ".claude-plugin/plugin.json",
+  ".cursor-plugin/plugin.json",
   ".claude-plugin/marketplace.json",
   ".agents/plugins/marketplace.json",
 ];

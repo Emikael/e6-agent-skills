@@ -1,142 +1,101 @@
 ---
 name: e6-test-driven-development
-description: Use when writing or running tests for new logic, fixing a bug, changing behavior, proving code works, or refactoring existing functionality with regression risk. Use when a failing reproduction, red-green-refactor cycle, test-only deliverable, or preserved contract needs evidence.
+description: Use when writing tests for new logic, fixing a bug, changing behavior, proving code works, or refactoring existing functionality with regression risk. Use when a failing reproduction, red-green-refactor cycle, test-only deliverable, or preserved contract needs evidence.
 ---
 
 # Test-Driven Development
 
 ## Overview
 
-Prove the required behavior before changing code. RED → GREEN → REFACTOR.
-Use a failing reproduction for bugs. Passing tests must establish accepted
-outcomes, not mirror the implementation.
+Prove the required behavior before changing code: RED → GREEN → REFACTOR. Passing tests must establish accepted outcomes, not mirror the implementation.
 
 ## When to Use
 
 - New logic, changed behavior, bug fixes, refactoring with regression risk.
-- Browser behavior needs runtime checks as well as automated tests.
-- Exclude documentation, static content, and configuration with no behavior impact.
+- Browser behavior that needs runtime checks as well as automated tests.
 
-## Workflow handoff
-
-Use `e6-caveman` for prose and delegation. If this is a standalone engineering
-request with no active workflow, load `using-e6-agent-skills` once. Otherwise,
-update the current phase evidence and return to its coordinator. Consult
-`../../references/workflow-contract.md` as needed; do not reload the workflow
-recursively. A test-only request stays test-only.
+**Not for:** documentation, static content, or configuration with no behavior impact (use the relevant validator); localizing an unknown failure → `e6-debugging-and-error-recovery`, which returns here for the regression test.
 
 ## Process
 
 ### 1. Load behavior and tooling
 
-Read applicable project instructions, the task/bug/spec and acceptance IDs,
-nearby implementation and tests, and relevant public contracts. Read README
-invariants, not only its test command. Preserve existing behavior unless the
-accepted task changes it.
+Read project instructions, the task, bug, or spec with its requirement IDs, nearby code and tests, public contracts, and README invariants. Preserve existing behavior unless the accepted task changes it.
 
-Discover language, test framework/configuration, test placement, focused and
-full-suite commands, and CI gates. Prefer checked-in wrappers and repo scripts:
-`./gradlew`, `./mvnw`, `make test`, `python3 -m unittest`, or the project's
-actual equivalent. Never assume `npm test`.
-
-Record the current baseline when it affects diagnosis. Separate existing
-failures from changes caused by this task.
+Discover the test framework, test placement, focused and full-suite commands, and CI gates. Prefer checked-in wrappers and scripts (`./gradlew`, `make test`, `python3 -m unittest`, or the real equivalent); never assume `npm test`. A project's own test procedure replaces this generic one ([project rules](../../references/workflow-contract.md#project-rules-override-pack-defaults)). Record the baseline, separating existing failures from ones this task causes.
 
 ### 2. Translate acceptance into tests
 
-Map each changed requirement ID or exact criterion to a test with preconditions,
-input/action and expected observable outcome. Include relevant failure paths,
-boundaries and preserved invariants. Derive expected values from the accepted
-contract, not from the code or a stakeholder's guessed patch.
+Map each changed requirement ID or criterion to a test with preconditions, action, and an observable expected outcome. Record each mapping as a row of the contract's [traceability matrix](../../references/workflow-contract.md#acceptance-and-tests), and name the plausible bug each test would catch. Include failure paths, boundaries, and preserved invariants. Derive expected values from the accepted contract, not from the code.
 
-Choose the smallest level that proves it: unit for pure logic; integration for
-API/DB/filesystem boundaries; real runtime/E2E for critical user flows. Use real
-implementations where practical; mock only uncontrollable boundaries. A mock
-return value or internal call sequence alone does not prove the feature.
+Choose the smallest level that proves it: unit for pure logic, integration for API/database/filesystem boundaries, end-to-end for critical user flows. Mock only uncontrollable boundaries; a mock's return value or an internal call sequence does not prove the feature.
 
 ### 3. RED — run before implementation
 
-For behavior-preserving refactors, run characterization/baseline tests before
-edits and afterward; do not manufacture RED for behavior already correct.
+For behavior-preserving refactors, run characterization or baseline tests before and after editing; do not manufacture a RED for already-correct behavior.
 
-For changed behavior, write the focused test and run the discovered command before changing behavior.
-Inspect the failure: it must show the missing or incorrect behavior, not an
-unrelated syntax, import, dependency, environment, or test-discovery error.
-An intentionally absent feature must be distinguished from a broken harness.
-Repair the harness when needed, then obtain valid RED evidence.
+For changed behavior, write the focused test and run it first. The failure must show the missing or incorrect behavior, not a syntax, import, environment, or discovery error; repair a broken harness, then obtain a valid RED.
 
-If a new regression test passes, establish why; it has not reproduced the bug.
-Use the reported conditions or find the missing case. Already passing tests for
-preserved invariants remain useful; they are not RED proof for changed behavior.
-Record command, requirement and decisive assertion/output.
+**Prove-It pattern for bugs:** reproduce the bug with a failing test before touching the fix. A new test that passes has not reproduced the bug; use the reported conditions or find the missing case.
 
-**Test-only exit:** If the request is to write a failing test without fixing
-behavior, stop here after valid RED. Return test paths, commands, expected
-failures and unchanged implementation status to the coordinator/caller. Report
-any suite run as containing the expected target failure, not passing. Do not
-advance to GREEN, refactor, commit or deploy without authorization covering it.
+**Flaky RED:** rerun a new failing test to confirm it fails every time. If it fails only sometimes, remove the nondeterminism (time, randomness, ordering, shared state, unawaited async, network) until it fails on every run for the intended reason. Never accept an intermittent RED or mask it with retries or longer timeouts.
+
+Record the command, requirement ID, and decisive assertion or output.
+
+**Test-only exit:** if the request is a failing test without a fix, stop after valid RED. Return test paths, commands, and expected failures; report suite runs as containing the expected failure, not passing. Do not advance to GREEN, commit, or deploy without authorization.
 
 ### 4. GREEN — only when implementation is authorized
 
-Change only what satisfies the accepted behavior. Run the focused test again.
-If it fails, use `e6-debugging-and-error-recovery`; do not disable the test,
-weaken assertions or rewrite the expected result just to get green.
+Change only what satisfies the accepted behavior, then rerun the focused test. If it still fails, use `e6-debugging-and-error-recovery`. Never disable the test, weaken assertions, or rewrite the expected result to get green.
 
 ### 5. REFACTOR — preserve behavior
 
-Simplify only relevant code after GREEN. Re-run affected tests after edits.
-Use state/output assertions, deterministic inputs, isolated setup/teardown,
-awaited async operations, and names describing behavior. See
-`references/testing-techniques.md` for test sizes, DAMP, mock discipline and
-examples. JS/TS framework syntax lives in `../../references/testing-patterns.md`.
+Simplify relevant code after GREEN; rerun affected tests. See [testing patterns](../../references/testing-patterns.md) for test levels and sizes, state-based assertions, DAMP tests, test-double discipline, and framework examples.
 
 ### 6. Verify the accepted result
 
-For authorized implementation/refactoring, run the repository's full suite and
-applicable build/type/lint gates. Execute
-changed behavior locally through its actual entry point. Browser changes use
-`e6-browser-testing-with-devtools`; unit tests do not prove layout or interaction.
-Other runtimes use their actual CLI, API, app or computer interaction as relevant.
+- **Per slice:** focused tests plus the regressions the change could affect.
+- **Before handoff, or whenever the repository requires it:** the full required suite and build/type/lint gates, within the project's [check scope](../../references/workflow-contract.md#project-rules-override-pack-defaults). If the project limits local suites, state what CI must still prove.
 
-Reuse successful evidence until code, dependencies, configuration, environment
-or relevant state changes. Report exact blockers and checks not run; never claim
-passing results from static reasoning.
+Then exercise changed behavior through its real entry point: `e6-browser-testing-with-devtools` for browser changes (unit tests do not prove layout or interaction), the real CLI, API, or app otherwise.
 
-## Delegation
+Reuse passing evidence until code, dependencies, configuration, or environment change. Report blockers and checks not run; never claim passes from static reasoning.
 
-For a substantial independent reproduction task, a subagent may own only the
-named test paths. Give acceptance IDs, known inputs/outcomes, relevant context
-pointers and exact commands; exclude the proposed fix. Follow the shared
-contract's input/result bounds and no-nesting rule. The coordinator observes
-RED before editing implementation, then owns integration and final verification.
-Do not delegate a tiny test that costs less to write directly.
+### Delegating a reproduction
+
+For a substantial independent reproduction, a worker may own only named test paths. Give it requirement IDs, known inputs and outcomes, and exact commands, but not the proposed fix; packets follow the contract's [Delegation](../../references/workflow-contract.md#delegation) rules. The coordinator observes RED itself before editing implementation. Write tiny tests directly.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). A test-only request stops at valid RED; an authorized fix continues through GREEN, regressions, and runtime verification.
 
 ## Common Rationalizations
 
 | Rationalization | Reality |
 |---|---|
 | "Tests next sprint" | Reproduce first; deadlines do not validate a guessed fix. |
-| "The reported case passes now" | Also prove surrounding accepted invariants. |
-| "Any failure counts as RED" | Harness failures do not prove behavior. |
+| "The reported case passes now" | Also prove the surrounding accepted invariants. |
+| "Any failure counts as RED" | Harness failures and intermittent failures do not prove behavior. |
 | "Mocks pass, so the app works" | Verify the real boundary and runtime. |
-| "Run it again for reassurance" | Repeat only when relevant inputs changed. |
+| "Run the whole suite after every edit" | Focused tests per slice; the full required suite before handoff. |
 | "Test-only work must leave CI green" | Expected RED is the deliverable; do not fix behavior outside scope. |
 
 ## Red Flags
 
 - Behavior code changed before valid RED evidence.
-- Tests read only from the implementation; acceptance/invariants ignored.
-- Wrong ecosystem command, zero discovered tests, skipped tests or false passes.
+- Tests derived from the implementation instead of acceptance.
+- Wrong ecosystem command, zero discovered tests, skipped tests, or false passes.
+- A flaky RED accepted, or masked with retries and timeouts.
 - Browser verification claimed without using a browser.
-- Subagent writes both test and fix; coordinator never observes RED.
+- A worker writes both test and fix; the coordinator never observes RED.
 
 ## Verification
 
-Apply common checks and only the branch matching the authorized deliverable.
+Apply common checks plus the branch matching the deliverable.
 
-- [ ] Requested test-only or implementation scope is explicit; criteria map to behavioral tests.
-- [ ] Test-only: valid expected RED observed; implementation unchanged; failures reported accurately; no unauthorized fix, commit or deployment.
-- [ ] Implementation: RED preceded the fix and GREEN followed; preserved invariants hold. Refactoring uses characterization evidence.
-- [ ] Implementation: focused/full-suite commands and relevant gates pass; actual changed runtime scenario exercised.
-- [ ] No tests weakened, skipped or disabled to hide failures.
-- [ ] Evidence, blockers and omissions returned; test-only work exits at its deliverable, remaining phases require matching scope.
+- [ ] Requested scope (test-only or implementation) is explicit; criteria map to behavioral tests.
+- [ ] RED was valid and deterministic for the intended reason.
+- [ ] Test-only: implementation unchanged; failures reported accurately; no unauthorized fix or commit.
+- [ ] Implementation: RED preceded GREEN; invariants hold; refactoring has characterization evidence.
+- [ ] Implementation: focused tests per slice and the full required suite before handoff pass; the runtime scenario was exercised.
+- [ ] No tests weakened, skipped, or disabled to hide failures.

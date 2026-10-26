@@ -1,7 +1,7 @@
 #!/bin/bash
-# Claude Code SessionStart hook: inject a compact workflow contract once per
-# lifecycle event. Skills themselves remain progressively loaded on demand.
-# Registered through the standard hooks/hooks.json plugin component.
+# SessionStart hook for Claude Code and Cursor plugins: inject a compact workflow
+# contract once per lifecycle event. Skills themselves remain progressively loaded on demand.
+# Registered by hooks/hooks.json (Claude Code) and hooks/hooks-cursor.json (Cursor).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,12 +14,15 @@ ROUTER_FILE="$PACK_ROOT/skills/using-e6-agent-skills/SKILL.md"
 # files cannot contain NUL in Bash strings; other UTF-8 bytes pass through.
 json_escape() {
   local value="$1" code character escaped
+  # Bash 5.2 expands & in replacements; keep 3.2 through 5.x literal and identical.
+  shopt -u patsub_replacement 2>/dev/null || true
   value="${value//\\/\\\\}"
   value="${value//\"/\\\"}"
   for code in {1..31}; do
     printf -v character "\\$(printf '%03o' "$code")"
     printf -v escaped '\\u%04x' "$code"
-    value="${value//"$character"/"$escaped"}"
+    # Unquoted replacement: Bash 3.2 (macOS /bin/bash) keeps quotes there literally.
+    value="${value//"$character"/$escaped}"
   done
   printf '%s' "$value"
 }
@@ -38,4 +41,10 @@ Router file: $ROUTER_FILE
 
 $CONTENT"
 
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$(json_escape "$CONTEXT")"
+# Cursor plugins set CURSOR_PLUGIN_ROOT (and may also set CLAUDE_PLUGIN_ROOT) and
+# read snake_case additional_context. Claude Code reads the nested form.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{"additional_context":"%s"}\n' "$(json_escape "$CONTEXT")"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$(json_escape "$CONTEXT")"
+fi

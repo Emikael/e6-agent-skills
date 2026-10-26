@@ -39,13 +39,13 @@ Copilot supports specialized agent personas. Use the e6-agent-skills agents:
 # Create the agents directory and copy agent definitions
 mkdir -p .github/agents
 cp /path/to/e6-agent-skills/agents/code-reviewer.md .github/agents/code-reviewer.agent.md
-cp /path/to/e6-agent-skills/agents/test-engineer.md .github/agents/test-engineer.agent.md
+cp /path/to/e6-agent-skills/agents/qa-engineer.md .github/agents/qa-engineer.agent.md
 cp /path/to/e6-agent-skills/agents/security-auditor.md .github/agents/security-auditor.agent.md
 ```
 
 Invoke agents in Copilot Chat:
 - `@code-reviewer Review this PR`
-- `@test-engineer Analyze test coverage for this module`
+- `@qa-engineer Analyze test coverage for this module`
 - `@security-auditor Check this endpoint for vulnerabilities`
 
 ### Custom Instructions (User Level)
@@ -146,7 +146,7 @@ For the rest, run the same `mkdir`/`cat` block with the filename swapped (the fi
 | `.github/prompts/build.prompt.md` | Implement the next planned task, test-first | Use the e6-incremental-implementation and e6-test-driven-development skills. Read `tasks/plan.md` and `tasks/todo.md`, then take the next unchecked task and only that one. Write a failing test first, make it pass, refactor, run the suite, and tick the task off. Stop there and report what changed. |
 | `.github/prompts/test.prompt.md` | Write tests before the code that satisfies them | Use the e6-test-driven-development skill. For new behavior, write a failing test that captures it before any implementation. For a bug, reproduce it with a failing test first, then fix it. Run the suite after each step and show me the red and the green output. |
 
-Write the body yourself, or take it from this table, rather than copying `.claude/commands/*.md` verbatim: those files reference skills as `e6-agent-skills:<name>`, a Claude Code plugin namespace that means nothing to Copilot.
+Write the body yourself, or take it from this table, rather than copying `.claude/commands/*.md` verbatim: those files are written for Claude Code, and a skill reference in the Claude Code plugin namespace form `e6-agent-skills:<name>` means nothing to Copilot.
 
 ### If the skill slash commands don't appear
 
@@ -162,6 +162,6 @@ Work through these in order — `/e6-spec-driven-development` missing and `/spec
 ## Usage Tips
 
 1. **Keep instructions concise** — Copilot instructions work best when focused. Summarize the key rules rather than including full skill files.
-2. **Use agents for review** — The code-reviewer, test-engineer, and security-auditor agents are designed for Copilot's agent model.
+2. **Use agents for review** — The code-reviewer, qa-engineer, and security-auditor agents are designed for Copilot's agent model.
 3. **Reference in chat** — When working on a specific phase, paste the relevant skill content into Copilot Chat for context.
 4. **Combine with PR reviews** — Set up Copilot to review PRs using the code-reviewer agent persona.

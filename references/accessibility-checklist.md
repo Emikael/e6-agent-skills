@@ -1,10 +1,11 @@
 # Accessibility Checklist
 
-Quick reference for WCAG 2.1 AA compliance. Use alongside the `e6-frontend-ui-engineering` skill.
+Quick reference for WCAG 2.2 AA conformance. Use alongside the `e6-frontend-ui-engineering` skill. Success-criterion numbers are given for the checks WCAG 2.2 added or changed.
 
 ## Table of Contents
 
 - [Essential Checks](#essential-checks)
+- [WCAG 2.2 Additions](#wcag-22-additions)
 - [Common HTML Patterns](#common-html-patterns)
 - [Testing Tools](#testing-tools)
 - [Quick Reference: ARIA Live Regions](#quick-reference-aria-live-regions)
@@ -16,6 +17,7 @@ Quick reference for WCAG 2.1 AA compliance. Use alongside the `e6-frontend-ui-en
 - [ ] All interactive elements focusable via Tab key
 - [ ] Focus order follows visual/logical order
 - [ ] Focus is visible (outline/ring on focused elements)
+- [ ] Focused element is not entirely hidden by sticky headers, footers, banners, or overlays (2.4.11)
 - [ ] Custom widgets have keyboard support (Enter to activate, Escape to close)
 - [ ] No keyboard traps (user can always Tab away from a component)
 - [ ] Skip-to-content link at top of page - visible (at least) on keyboard focus
@@ -31,7 +33,7 @@ Quick reference for WCAG 2.1 AA compliance. Use alongside the `e6-frontend-ui-en
 - [ ] Tables have `<th>` headers with scope
 
 ### Visual
-- [ ] Text contrast ≥ 4.5:1 (normal text) or ≥ 3:1 (large text, 18px+)
+- [ ] Text contrast ≥ 4.5:1 (normal text) or ≥ 3:1 (large text: 24px regular, or 18.66px bold)
 - [ ] UI components contrast ≥ 3:1 against background
 - [ ] Color is not the only way to convey information
 - [ ] Text resizable to 200% without breaking layout
@@ -49,8 +51,21 @@ Quick reference for WCAG 2.1 AA compliance. Use alongside the `e6-frontend-ui-en
 - [ ] Language declared (`<html lang="en">`)
 - [ ] Page has a descriptive `<title>`
 - [ ] Links distinguish from surrounding text (not by color alone)
-- [ ] Touch targets ≥ 44x44px on mobile
+- [ ] Pointer targets at least 24×24 CSS px, or spaced so a 24 px circle around each does not overlap another target (2.5.8); 44×44 px is the stronger touch recommendation
 - [ ] Meaningful empty states (not blank screens)
+
+## WCAG 2.2 Additions
+
+Criteria new in WCAG 2.2 at Level A or AA; AA conformance requires all of them. Check them explicitly, because older audit tools and checklists often miss them.
+
+- [ ] **2.4.11 Focus Not Obscured (Minimum), AA:** a focused component is never fully covered by author-created content such as sticky headers, cookie banners, or chat widgets.
+- [ ] **2.5.7 Dragging Movements, AA:** every drag action (reorder, slider, map pan, drag-to-upload) has a single-pointer alternative, such as buttons, a click target, or a menu.
+- [ ] **2.5.8 Target Size (Minimum), AA:** pointer targets are at least 24×24 CSS px, or have enough spacing; exceptions include inline text links and targets whose size is essential.
+- [ ] **3.2.6 Consistent Help, A:** help mechanisms (contact details, chat, help link) appear in the same relative order on every page that offers them.
+- [ ] **3.3.7 Redundant Entry, A:** information the user already entered in the same process is auto-filled or selectable, not re-typed (except for security or when the earlier value is no longer valid).
+- [ ] **3.3.8 Accessible Authentication (Minimum), AA:** no login step requires a cognitive function test (recalling a password, transcribing a code, solving a puzzle) unless an alternative or assisting mechanism exists. Allow paste and password managers. Object-recognition and personal-content checks are permitted at AA.
+
+**Removed in 2.2:** 4.1.1 Parsing is obsolete. Do not fail an audit on HTML parsing errors alone; duplicate IDs still matter when they break accessible names or relationships (1.3.1, 4.1.2).
 
 ## Common HTML Patterns
 
@@ -97,8 +112,8 @@ Quick reference for WCAG 2.1 AA compliance. Use alongside the `e6-frontend-ui-en
 <!-- Alert messages -->
 <div role="alert">Error: Title is required</div>
 
-<!-- Modal dialogs -->
-<dialog aria-modal="true" aria-labelledby="dialog-title">
+<!-- Modal dialogs: open native <dialog> with showModal(); setting `open` alone is non-modal -->
+<dialog aria-labelledby="dialog-title">
   <h2 id="dialog-title">Confirm Delete</h2>
   ...
 </dialog>

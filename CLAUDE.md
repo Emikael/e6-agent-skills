@@ -8,7 +8,7 @@ This is the e6-agent-skills project — a collection of production-grade enginee
 
 ```
 skills/       → Core skills (SKILL.md per directory)
-agents/       → Reusable agent personas (code-reviewer, test-engineer, security-auditor, web-performance-auditor)
+agents/       → Specialist personas (tech-lead, product-owner, ui-ux-designer, backend-engineer, frontend-engineer, qa-engineer, security-auditor, sre-engineer, code-reviewer, web-performance-auditor)
 hooks/        → Session lifecycle hooks
 .claude/commands/ → Slash commands (/spec, /plan, /build, /test, /review, /code-simplify, /ship; plus /webperf specialist audit)
 references/   → Supplementary checklists (testing, performance, security, accessibility, observability)
@@ -47,6 +47,7 @@ Before adding a new skill or significantly reworking an existing one, run the pr
 - Tests: `node --test scripts/*test.js scripts/lib/*test.js`
 - Validate: `node scripts/validate-skills.js`, reference/command/artifact/version validators
 - Activation: `bash hooks/session-start-test.sh`, installer tests
+- Portable skills: `node scripts/build-portable-skills.js --out <dir> [--zip]` — self-contained skill folders/ZIPs for single-folder hosts
 - Evals: `node scripts/run-evals.js` — trigger/routing evals for every skill (CI); `--behavioral <skill>` for graded runs
 
 ## Pull Requests

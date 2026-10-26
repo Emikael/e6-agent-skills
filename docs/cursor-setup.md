@@ -1,230 +1,100 @@
 # Using e6-agent-skills with Cursor
 
-## Whole workflow
+Cursor combines **rules** (short always-on or file-scoped policies) with **skills** (full workflows loaded on demand) and **plugins** (packaged skills, rules, and hooks). This guide covers three ways to install the pack, from most to least complete. Whichever you choose, keep one coordinator (`using-e6-agent-skills`) and load skill bodies on demand; never paste whole `SKILL.md` files into rules.
 
-Install the complete pack and select `using-e6-agent-skills` as the coordinator for engineering requests. Add the compact [workflow bootstrap](../references/workflow-bootstrap.md) to this host's project instruction surface, with the installed pack path; keep skill bodies on demand. See [activation](workflow-activation.md). Use `e6-caveman` for concise output. The coordinator continues through context, criteria, tests, local runtime, review, and handoff within existing authorization; single-phase requests remain bounded. Native discovery alone does not prove full-workflow execution.
+> Cursor's plugin and hook formats are evolving. Skill paths match E6 Code's Cursor skill discovery and Cursor's published docs as of October 2026. Per Cursor's [hooks reference](https://cursor.com/docs/agent/hooks), plugin hooks run from the plugin's install directory (`CURSOR_PLUGIN_ROOT`), so the relative `./hooks/session-start.sh` resolves, and `sessionStart` reads `additional_context`. The hook is unit-tested here but was not exercised in a live Cursor session in CI; verify on your version.
 
+## Option A: Cursor plugin (skills + session bootstrap)
 
-How to wire [e6-agent-skills](../README.md) into **Cursor** using current, supported project context — not legacy monolith files or Kaizen-specific layouts.
+The repository ships a Cursor plugin manifest, [`.cursor-plugin/plugin.json`](../.cursor-plugin/plugin.json). It exposes `skills/` and registers [`hooks/hooks-cursor.json`](../hooks/hooks-cursor.json), whose `sessionStart` hook runs `hooks/session-start.sh`. When `CURSOR_PLUGIN_ROOT` is set, the script emits Cursor's `additional_context` with the same compact [workflow bootstrap](../references/workflow-bootstrap.md) that Claude Code receives. It injects about 100 words, not the skill catalog.
 
----
-
-## What Cursor supports today
-
-Cursor combines **rules** (short policies) and **skills** (full workflows):
-
-| Layer | Path | Role |
-|-------|------|------|
-| **Project rules** | `.cursor/rules/*.mdc` | Always-on or file-scoped instructions (`alwaysApply`, `globs`) |
-| **Project skills** | `.cursor/skills/<skill-name>/SKILL.md` | Agent-discovered workflows; read when the task matches the skill `description` |
-| **User rules** | Cursor Settings → Rules | Account-wide policies |
-| **User skills** (optional) | `~/.cursor/skills/` | Global skills available in every workspace |
-
-Docs: [Rules](https://docs.cursor.com/context/rules) · [Skills](https://docs.cursor.com/context/skills) (URLs may redirect as Cursor updates docs).
-
-### Rules vs skills
-
-- **Rules** — concise, stable (“use conventional commits”, “type-annotate public Python APIs”). Prefer one concern per file; avoid large pasted guides.
-- **Skills** — step-by-step processes from this repo (`e6-test-driven-development`, `e6-code-review-and-quality`, etc.). **Do not** copy entire `SKILL.md` bodies into rules; that duplicates `.cursor/skills/` and wastes context.
-
-### Legacy (avoid for new setups)
-
-| Legacy | Prefer |
-|--------|--------|
-| Root `.cursorrules` | `.cursor/rules/*.mdc` |
-| Copying `SKILL.md` → `.cursor/rules/` | `.cursor/skills/<name>/SKILL.md` |
-| “Load 10 skills as always-on rules” | 1–2 thin `alwaysApply` rules + skills on demand |
-
----
-
-## Recommended project layout
-
-```text
-your-project/
-├── .cursor/
-│   ├── rules/                    # Short .mdc policies (yours)
-│   │   └── e6-agent-skills.mdc      # Optional: “use project skills” pointer
-│   └── skills/                   # What Cursor Agent loads
-│       ├── using-e6-agent-skills/
-│       ├── e6-test-driven-development/
-│       ├── e6-code-review-and-quality/
-│       └── …                     # Synced from e6-agent-skills + your own skills
-└── e6-agent-skills/                 # Optional: git submodule or vendor clone
-    └── skills/                   # Upstream source only
-```
-
-**Source of truth for the agent:** `.cursor/skills/`.  
-Treat `e6-agent-skills/skills/` (or a cloned [Emikael/e6-agent-skills](https://github.com/Emikael/e6-agent-skills)) as **upstream** — sync into `.cursor/skills/`, do not edit only upstream and expect Cursor to see it.
-
----
-
-## Setup (any repository)
-
-### 1. Install skills into `.cursor/skills/`
-
-**From a local clone of e6-agent-skills** (at project root or elsewhere):
+Local install for testing or personal use:
 
 ```bash
-mkdir -p .cursor/skills
-rsync -a /path/to/e6-agent-skills/skills/ .cursor/skills/
+git clone https://github.com/Emikael/e6-agent-skills.git ~/src/e6-agent-skills
+mkdir -p ~/.cursor/plugins/local
+ln -s ~/src/e6-agent-skills ~/.cursor/plugins/local/e6-agent-skills
 ```
 
-**First-time copy without overwriting your custom skills:**
+Restart Cursor, then confirm that the plugin appears in Cursor's plugin settings and that a new Agent chat lists the e6 skills. Marketplace distribution requires Cursor's review; until the plugin is listed there, use the local install.
+
+## Option B: Skills folder plus a rule
+
+Cursor discovers skills from `.cursor/skills/`, `.agents/skills/`, `.claude/skills/`, and `.codex/skills/` in the project, and from the same folders under your home directory. Install self-contained copies so the links to shared checklists keep working:
 
 ```bash
-rsync -a --ignore-existing /path/to/e6-agent-skills/skills/ .cursor/skills/
+# From a clone of e6-agent-skills; writes one folder per skill.
+node /path/to/e6-agent-skills/scripts/build-portable-skills.js --out .cursor/skills
+# After upgrading the clone, replace the previous copies:
+node /path/to/e6-agent-skills/scripts/build-portable-skills.js --out .cursor/skills --force
 ```
 
-**After upstream updates:**
+A plain `rsync` of `skills/` would leave `../../references/...` links dangling, because shared checklists live at the pack root. The builder copies each linked checklist into the skill's own `references/` folder. Use `--skills a,b` to install a subset; keep `using-e6-agent-skills` and `e6-caveman` in any subset you intend to use as a workflow.
+
+Then add the always-applied coordinator rule:
 
 ```bash
-rsync -a /path/to/e6-agent-skills/skills/ .cursor/skills/
+node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js \
+  --project . --pack /path/to/e6-agent-skills --host cursor          # preview
+node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js \
+  --project . --pack /path/to/e6-agent-skills --host cursor --write  # install
 ```
 
-Each skill folder must contain `SKILL.md` with YAML frontmatter, at minimum:
+This writes `.cursor/rules/e6-workflow.mdc` with `alwaysApply: true` and a managed block. Re-running it updates only that block; `--check` reports a stale copy after a pack upgrade.
 
-```yaml
----
-name: e6-test-driven-development
-description: Drives development with tests. Use when implementing logic, fixing bugs, or changing behavior.
----
-```
+## Option C: Rule only
 
-Cursor uses `description` (and related metadata) to decide when to apply a skill.
+If you cannot install skills, use only the rule from Option B and point it at a full clone. The agent reads `using-e6-agent-skills/SKILL.md` and the specialists from the clone when a task needs them. Discovery is weaker than in Option A or B, because Cursor never sees the skill descriptions.
 
-### 2. Add minimal project rules (optional but useful)
+## Rules vs skills
 
-Create `.cursor/rules/e6-agent-skills.mdc`:
+- **Rules**: concise, stable policies ("use conventional commits", "type-annotate public APIs"). Use one concern per file. Prefer `.cursor/rules/*.mdc` over the legacy root `.cursorrules`.
+- **Skills**: the step-by-step processes in this pack. Do not copy them into rules; that duplicates content and wastes context on every request.
 
-```markdown
----
-description: Use e6-agent-skills workflows from .cursor/skills
-alwaysApply: true
----
-
-Before non-trivial technical work:
-
-1. Route via `.cursor/skills/using-e6-agent-skills/SKILL.md`.
-2. Read and follow the matching skill under `.cursor/skills/<name>/SKILL.md`.
-3. Open `reference.md` in that folder when the skill links to it.
-4. Prefer project skills over guessing; user does not need to say "read skill" each time.
-```
-
-Add **separate** `.mdc` files for repo-specific standards (style, language, stack), keeping each file focused.
-
-**Rule file format:**
-
-```markdown
----
-description: Shown in Cursor rule UI
-alwaysApply: false
-globs: "**/*.{ts,tsx}"
----
-
-# Your rule content
-```
-
-| Field | Use |
-|-------|-----|
-| `alwaysApply: true` | Every chat in this project |
+| Rule field | Use |
+|---|---|
+| `alwaysApply: true` | Every chat in this project; keep it to the e6 bootstrap and one or two non-negotiables |
 | `globs` | When matching files are in context |
-| `alwaysApply: false` + no globs | Agent-request / manual rule (Cursor UI) |
+| neither | Agent-requested or manual rule |
 
-### 3. User-level skills (optional)
+## Verify
 
-Copy or install skills you want everywhere under `~/.cursor/skills/`. Use for stack-wide guides (e.g. language patterns) that are not part of e6-agent-skills.
+1. A plain request ("add a status filter to the reports endpoint") makes the agent announce `Using using-e6-agent-skills …`, then record acceptance criteria before editing.
+2. A behavior change shows a failing test before the implementation.
+3. The agent runs project checks and exercises the changed path, or names the exact blocker.
+4. Review happens before the handoff.
 
-Project skills in `.cursor/skills/` take precedence for **this** repo’s workflows.
+Skill invocation alone is not evidence that the workflow ran. For deeper checks, see [workflow activation](workflow-activation.md#verify-your-setup).
 
-### 4. Verify
-
-1. **Settings → Rules** — project `.mdc` files listed.
-2. **Agent chat** — skills from `.cursor/skills/` appear in the skill list (if your Cursor build exposes it).
-3. Run a task that maps to a skill (e.g. “add a feature with tests first”) without naming the file — agent should open `e6-test-driven-development` when routing works.
-
----
-
-## How agents should use skills
-
-1. **Discover** — `using-e6-agent-skills` maps task phase → skill name.
-2. **Read** — full process in `.cursor/skills/<name>/SKILL.md`.
-3. **Deep dive** — `reference.md`, `references/*.md`, or linked checklists when the skill says so.
-4. **Combine** — e.g. `e6-incremental-implementation` + `e6-api-and-interface-design` for an API slice.
-
-Explicit user phrases (“follow TDD”, “use e6-code-review-and-quality”) still help if the agent drifts.
-
-### Phase → skill (quick map)
+## Phase map
 
 | You are… | Skill |
-|----------|--------|
+|---|---|
 | Clarifying requirements | `e6-interview-me`, `e6-idea-refine`, `e6-spec-driven-development` |
 | Planning tasks | `e6-planning-and-task-breakdown` |
-| Implementing | `e6-incremental-implementation`, `e6-frontend-ui-engineering`, `e6-api-and-interface-design` |
-| Testing | `e6-test-driven-development`, `e6-browser-testing-with-devtools` |
-| Debugging | `e6-debugging-and-error-recovery` |
-| Reviewing | `e6-code-review-and-quality`, `e6-code-simplification` |
-| Security / performance | `e6-security-and-hardening`, `e6-performance-optimization` |
-| Git / CI / ship | `e6-git-workflow-and-versioning`, `e6-ci-cd-and-automation`, `e6-shipping-and-launch` |
+| Implementing | `e6-incremental-implementation`, `e6-test-driven-development`, `e6-frontend-ui-engineering`, `e6-api-and-interface-design` |
+| Verifying | `e6-browser-testing-with-devtools`, `e6-debugging-and-error-recovery` |
+| Reviewing | `e6-code-review-and-quality`, `e6-code-simplification`, `e6-security-and-hardening`, `e6-performance-optimization` |
+| Shipping | `e6-git-workflow-and-versioning`, `e6-ci-cd-and-automation`, `e6-shipping-and-launch` |
 
-Full tree: `skills/using-e6-agent-skills/SKILL.md` in the repo.
+The coordinator chooses these automatically; naming a skill in chat still helps if the agent drifts.
 
----
+## Personas
 
-## What not to do
-
-| Avoid | Do instead |
-|-------|------------|
-| Paste all skills into one rule | Sync to `.cursor/skills/` |
-| Maintain two diverging copies | `rsync` from upstream; commit `.cursor/skills/` |
-| Many `alwaysApply: true` rules | One routing rule + focused globs rules |
-| Rely on `.cursorrules` only | Migrate to `.mdc` + skills |
-| Expect `e6-agent-skills/agents/*.md` to auto-load | Paste in chat, or distill a short rule |
-
----
-
-## Context tips
-
-- Keep **always-on** rules small (routing + 1–2 non-negotiables).
-- Let **skills** carry long checklists and rationalization tables.
-- Add phase-specific **globs** rules only when needed (e.g. `**/*.py`, `**/components/**`).
-- Nudge by skill name if verification steps are skipped.
-
----
-
-## `agents/` directory
-
-Files under `e6-agent-skills/agents/` (e.g. code reviewer persona) are **not** loaded automatically by Cursor. Options:
-
-- Reference the skill equivalent (`e6-code-review-and-quality`).
-- Paste agent markdown into the chat for one review.
-- Extract a **short** checklist into a `.mdc` rule.
-
----
+Files under `agents/` are review personas. Cursor plugins can package agents, but this manifest does not register them yet. Use the matching skill instead (`e6-code-review-and-quality`, `e6-security-and-hardening`, `e6-test-driven-development`, `e6-performance-optimization`), or paste a persona into a chat for a one-off review.
 
 ## Troubleshooting
 
 | Symptom | Check |
-|---------|--------|
-| Skill never used | `SKILL.md` under `.cursor/skills/<name>/`? Valid frontmatter `description`? |
-| Rules ignored | Extension `.mdc`? Correct `alwaysApply` / `globs`? |
-| Stale workflow | Re-`rsync` from `e6-agent-skills/skills/` |
-| Duplicate instructions | Remove skill content from rules; keep one source |
-| Wrong skill picked | Narrow `description` in custom skills; nudge in chat |
-
----
-
-## Checklist (new project)
-
-- [ ] `mkdir -p .cursor/skills` and sync from `e6-agent-skills/skills/`
-- [ ] Optional: `.cursor/rules/e6-agent-skills.mdc` with routing hint
-- [ ] Add repo-specific rules as separate small `.mdc` files
-- [ ] Commit `.cursor/skills/` and `.cursor/rules/` (team shares behavior)
-- [ ] Skip giant `.cursorrules` unless required by legacy tooling
-
----
+|---|---|
+| Skills never used | `SKILL.md` under one of the discovery folders? Valid `name`/`description` frontmatter? |
+| Broken links to checklists | Installed with `rsync` instead of `build-portable-skills.js` |
+| Rule ignored | `.mdc` extension? `alwaysApply: true`? Run the installer with `--check` |
+| Plugin bootstrap missing | Plugin enabled and Cursor restarted? Hook output must contain `additional_context` |
+| Two workflows fighting | Another plugin's router is active; keep one coordinator in project rules |
 
 ## See also
 
-- [getting-started.md](getting-started.md)
-- [../README.md](../README.md) — Cursor quick blurb
-- Upstream: [github.com/Emikael/e6-agent-skills](https://github.com/Emikael/e6-agent-skills)
+- [Workflow activation](workflow-activation.md)
+- [Usage guide](usage-guide.md)
+- [Getting started](getting-started.md)

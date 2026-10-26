@@ -8,14 +8,14 @@ It's a guided tour, not a rulebook. The rules live in [CONTRIBUTING.md](../CONTR
 
 ## 1. The mental model
 
-The repo has five composable layers. Understanding what each one is *for* prevents the most common contribution mistakes (putting reference material in a skill, building a persona that routes to other personas, duplicating content across skills).
+The repo has five composable layers. Understanding what each one is *for* prevents the most common contribution mistakes (putting shared reference material inside one skill, building a persona that routes to other personas, duplicating content across skills).
 
 | Layer | Location | Job | In one word |
 |---|---|---|---|
 | **Skills** | `skills/<name>/SKILL.md` | Step-by-step workflows with verification gates | *How* |
 | **Personas** | `agents/<role>.md` | Roles with a perspective and output format | *Who* |
 | **Commands** | `.claude/commands/`, `.gemini/commands/`, `commands/` | User-facing entry points; the orchestration layer | *When* |
-| **References** | `references/*.md` | Checklists skills pull in on demand | *What to check* |
+| **References** | `references/*.md` (shared), `skills/<name>/references/` (single-skill) | Checklists and contracts skills pull in on demand | *What to check* |
 | **Evals** | `evals/cases/<name>.json` | Proof that skills trigger and behave correctly | *Does it work* |
 
 Two structural rules worth internalizing early:
@@ -36,8 +36,8 @@ cd e6-agent-skills
 
 There's no build step and no `package.json`; validators are plain Node scripts. You need:
 
-- **Node 20+** (what CI runs) for the `scripts/` validators
-- **bash** (+ `jq` recommended) for the hook regression test
+- **Node 24** (what CI runs, see `.github/workflows/test-plugin-install.yml`) for the `scripts/` validators and tests
+- **bash** for the hook regression test (it also needs Node; `jq` is not required)
 - **`gh` CLI** for the duplicate-PR check before proposing a skill
 - **Claude Code** only if you want to run Tier 3 behavioral evals locally
 
@@ -58,34 +58,48 @@ node scripts/validate-skills.js
 # Command parity and description sync across the three command directories
 node scripts/validate-commands.js
 
-# Tier 2, trigger & routing: positive prompts rank top-k, negatives don't collide
-node scripts/run-evals.js
+# Spec/plan/todo artifact paths stay canonical across commands, skills, and guarded docs
+node scripts/validate-artifact-paths.js
+
+# references/ links in skills resolve
+node scripts/validate-reference-links.js
+
+# Plugin manifest versions agree
+node scripts/validate-versions.js
+
+# Script and validator unit tests
+node --test scripts/*test.js scripts/lib/*test.js
+
+# Tier 2, trigger & routing: positive prompts rank top-k, negatives don't collide;
+# CI fails if the rank-1 rate drops below 95%
+node scripts/run-evals.js --min-rank1 95
 
 # Tier 3, behavioral (on demand, spends tokens; --dry-run prints the plan)
 node scripts/run-evals.js --behavioral <skill-name> --dry-run
 
-# Hook regression test, required if you touch hooks/session-start.sh
-# or skills/using-e6-agent-skills/SKILL.md
+# Hook regression test, required if you touch hooks/ or a plugin manifest's hook wiring.
+# Checks the plugin SessionStart registrations and that the hook injects the compact
+# references/workflow-bootstrap.md plus installed paths, never the router body.
 bash hooks/session-start-test.sh
 ```
 
 The three eval tiers are worth understanding even if you never touch the harness, because a red Tier 2 usually means *fix your skill's description*, not the eval: Tier 2 is a lexical approximation of routing (stemmed TF-IDF over descriptions), and its two target failure modes are a description missing the vocabulary users actually say, and an over-broad description that outranks the right skill. The full design, schema, and trust-level rules are in [evals/README.md](../evals/README.md).
 
-Run the relevant subset before every PR. A PR that arrives green through Tier 1 + Tier 2 + command parity is reviewable; one that doesn't will bounce on mechanics before anyone reads the content.
+Run the relevant subset before every PR; [CONTRIBUTING.md](../CONTRIBUTING.md#testing-activation-and-workflow) lists the checks for activation, router, and bootstrap changes. A PR that arrives green through Tier 1 + Tier 2 + command parity is reviewable; one that doesn't will bounce on mechanics before anyone reads the content.
 
 ## 4. Contribution paths
 
 ### Path 1: Fixing or improving an existing skill (most common, best first PR)
 
 1. Keep changes focused and minimal; preserve the skill's structure and tone.
-2. If you changed the frontmatter `description`, expect Tier 2 effects; run `node scripts/run-evals.js` and check the skill's trigger prompts still rank.
+2. If you changed the frontmatter `description`, expect Tier 2 effects; run `node scripts/run-evals.js --min-rank1 95` and check the skill's trigger prompts still rank.
 3. Run Tier 1 to confirm frontmatter is still valid.
 
 ### Path 2: Proposing a new skill (higher bar, do the pre-flight)
 
 The catalog already covers most of the lifecycle, so the burden of proof is on the gap. Before writing anything, run the pre-flight checks in [CONTRIBUTING.md](../CONTRIBUTING.md#before-proposing-a-new-skill): search the catalog, check open PRs (`gh pr list --state open`; near-duplicate clusters already exist), confirm the idea fits [skill-anatomy.md](skill-anatomy.md), and justify the gap explicitly in your PR description. If it overlaps an existing skill, a focused edit to that skill beats a new directory.
 
-A new skill ships as a set, not a single file: the `skills/<kebab-case-name>/SKILL.md`, a matching `evals/cases/<name>.json`, and a `scripts/` directory only when it ships runnable helpers (reference material goes in `references/`, never inside the skill). The exact frontmatter rules, the section anatomy, and the eval-case minimums live in [CONTRIBUTING.md](../CONTRIBUTING.md#structure) and [skill-anatomy.md](skill-anatomy.md); take them from there rather than this tour, so the two can't drift.
+A new skill ships as a set, not a single file: the `skills/<kebab-case-name>/SKILL.md`, a matching `evals/cases/<name>.json`, and a `scripts/` directory only when it ships runnable helpers. Reference material used only by that skill may live in its own `skills/<name>/references/`; material shared across skills goes in the root `references/` ([skill-anatomy.md](skill-anatomy.md#shared-references) explains the split). The exact frontmatter rules, the section anatomy, and the eval-case minimums live in [CONTRIBUTING.md](../CONTRIBUTING.md#structure) and [skill-anatomy.md](skill-anatomy.md); take them from there rather than this tour, so the two can't drift.
 
 One point worth internalizing rather than looking up: when writing trigger prompts, paraphrase how users actually talk; copying the description into the prompts games the eval and tells you nothing.
 
@@ -93,14 +107,18 @@ One point worth internalizing rather than looking up: when writing trigger promp
 
 - Docs and skills are **English only**; translations aren't accepted because they drift ([CONTRIBUTING.md](../CONTRIBUTING.md#translations) has the rationale).
 - Changes to `scripts/run-evals.js` or the eval schema should stay compatible with skill-creator's `evals.json` schema (adopted verbatim for the behavioral tier; that compatibility is a feature, not an accident).
-- Anything touching the session-start hook or the meta-skill it embeds requires the hook regression test (§3).
+- Anything touching the session-start hook, its registration, or the workflow bootstrap it injects requires the hook regression test (§3).
 
 ## 5. Pre-PR checklist
 
 - [ ] Tier 1 green: `node scripts/validate-skills.js`
-- [ ] Tier 2 green: `node scripts/run-evals.js`
+- [ ] Tier 2 green at the CI threshold: `node scripts/run-evals.js --min-rank1 95`
 - [ ] Command parity green if you touched any command directory: `node scripts/validate-commands.js`
-- [ ] Hook test green if you touched `hooks/` or `using-e6-agent-skills`
+- [ ] Artifact paths green: `node scripts/validate-artifact-paths.js`
+- [ ] Reference links green: `node scripts/validate-reference-links.js`
+- [ ] Manifest versions green: `node scripts/validate-versions.js`
+- [ ] Script tests green if you touched `scripts/`: `node --test scripts/*test.js scripts/lib/*test.js`
+- [ ] Hook test green if you touched `hooks/`, the router, or the workflow bootstrap: `bash hooks/session-start-test.sh`
 - [ ] New skill → eval case file present with the minimum trigger/behavioral counts
 - [ ] New skill → gap justified in the PR description; catalog and open PRs checked
 - [ ] No duplicated content; cross-references used instead

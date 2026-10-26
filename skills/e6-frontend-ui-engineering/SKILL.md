@@ -7,126 +7,95 @@ description: Use when building or modifying user-facing interfaces, responsive p
 
 ## Overview
 
-Build accessible, responsive UIs from product requirements and existing design
-patterns. Verify rendered behavior, interaction and finish in the running app.
+Build accessible, responsive UIs from product requirements and the existing design system. Target WCAG 2.2 AA. Verify rendered behavior, interaction, and finish in the running app.
 
 ## When to Use
 
-- Components/pages, layout, responsiveness, state and interaction changes.
-- Visual/UX fixes or accessibility work.
-- Exclude backend-only work; use the relevant engineering skill.
+- Components, pages, layout, responsiveness, state, and interaction changes.
+- Visual or UX fixes and accessibility work.
 
-## Workflow handoff
-
-Use `e6-caveman` for prose and delegation. If a standalone engineering request
-has no active workflow, load `using-e6-agent-skills` once. Otherwise update phase
-evidence and return to its coordinator. Consult
-`../../references/workflow-contract.md` as needed; do not reload recursively.
-A requested design review stays a review; implementation continues through
-runtime verification and review within the authorized scope.
+**Not for:** backend-only work → `e6-api-and-interface-design` or `e6-incremental-implementation`; driving the browser to collect evidence → `e6-browser-testing-with-devtools` (this skill decides what to check).
 
 ## Process
 
-### 1. Load product and code context
+### 1. Discover the design system and code
 
-Read applicable rules, accepted task/IDs, design system, related screens and
-components, public props/ref conventions, tokens, state/data contracts, existing
-tests and app startup commands. Reuse the framework and dependencies already
-present. Do not introduce a styling/state library merely to follow an example.
+Read applicable rules and the accepted task with its requirement IDs. Then, before designing anything, find what exists: design tokens (color, spacing, type, radius), shared components and their prop/ref conventions, related screens, state and data contracts, tests, and startup commands. Never add a styling or state library merely to follow an example.
 
-For a distinct new direction, inspect two or three trusted/product-supplied
-references. Record hierarchy, density, navigation, controls, responsive rules
-and required states as a short design contract. Adapt structure to the product's
-own components/content; do not copy branding or proprietary assets. If no
-references exist, use product context and state material assumptions.
+### 2. Write a short design contract
 
-### 2. Define acceptance and tests
+For a new screen or a distinct new direction, inspect two or three trusted or product-supplied references, then record:
 
-Map each criterion to a visible outcome and interaction. Include applicable
-loading, empty, error, success, disabled and permission states, realistic content,
-responsive widths and keyboard/focus behavior. Read existing conventions before
-choosing test placement or props.
+```text
+Job: <what the user accomplishes here>
+Primary action: <the one action the layout serves>
+States: loading / empty / error / success / disabled / no permission
+Breakpoints: <project breakpoints, or 320/768/1024/1440 px> and what changes at each
+Tokens and components: <existing tokens and components reused>
+Rejected patterns: <patterns deliberately avoided, and why>
+```
 
-Use `e6-test-driven-development` for behavioral RED before implementation. Test
-observable results with accessible role/label queries. Validate critical data
-and navigation flows across boundaries, not only mocked component callbacks.
-Static visual changes need rendered comparison and accessibility evidence;
-do not add a tautological test of CSS implementation details.
+Adapt structure to the product's own components and content; never copy another product's branding or assets. Without references, use product context and state material assumptions. [ui-patterns.md](references/ui-patterns.md) covers reference-led design and patterns to avoid.
 
-### 3. Implement a coherent slice
+### 3. Define acceptance and tests
 
-Use `e6-incremental-implementation`. Keep components focused; prefer composition,
-colocation and the simplest appropriate state:
+Map each criterion to a visible outcome and interaction, including the contract's states, realistic content, responsive widths, and keyboard/focus behavior.
+
+Use `e6-test-driven-development` for behavioral RED before implementation. Query by accessible role and label. Validate critical data and navigation flows across boundaries, not only mocked callbacks. Static visual changes need rendered comparison and accessibility evidence, not a tautological CSS test.
+
+### 4. Implement within the current slice
+
+`e6-incremental-implementation` owns the slice loop; implement the current slice here without reloading it. Keep components focused and prefer composition, colocation, and the simplest state that works:
 
 - Local state for component UI; lifted state for nearby siblings.
-- URL state for shareable filters/pagination; established server-state tooling
-  for remote cache; context for read-heavy theme/auth/locale.
+- URL state for shareable filters and pagination; the project's server-state tooling for remote data; context for read-heavy theme, auth, or locale.
 - Global state only when shared behavior demands it.
 
-Handle errors and loading deliberately. Optimistic updates need scoped rollback,
-concurrent-mutation safety and server reconciliation; never reset an entire old
-list over later successful edits. Preserve public `className`, DOM refs and
-existing consumer behavior. See `e6-api-and-interface-design` for changed props
-or shared contracts.
+Handle loading and errors deliberately. Optimistic updates need scoped rollback that never erases a later success; follow [ui-patterns.md](references/ui-patterns.md#loading-and-transitions). Preserve public `className`, DOM refs, and consumer behavior; use `e6-api-and-interface-design` for changed props or shared contracts.
 
-### 4. Verify in the running app
+### 5. Verify in the running app
 
-Use `e6-browser-testing-with-devtools` with the available browser/computer or
-existing automation. Start the app with repository commands; inspect screenshots
-and actual DOM/console/network state. Exercise accepted actions and relevant
-states, not only initial render.
+Use `e6-browser-testing-with-devtools` or the project's own test procedure. Start the app with repository commands; inspect screenshots and the actual DOM, console, and network state. Exercise accepted actions and states, not only the initial render.
 
-- Tab/Shift+Tab through controls; test arrows/Enter/Space/Escape as the widget
-  requires. Disabled items do not execute or receive forbidden focus.
-- Test menu/dialog initial focus, containment when modal and return to trigger.
-  Native `dialog` needs `showModal()`; `open` alone does not trap focus.
-- Check accessible names, semantic roles, headings and dynamic announcements.
-  Inspect the accessibility tree and automated audit. Claim screen-reader
-  verification only when a real screen reader was used.
-- Check responsive content at project breakpoints; absent a project matrix,
-  cover 320px, 768px, 1024px and 1440px plus the affected transition width.
-- Confirm real submission, persistence, errors/retry and authorization states
-  where relevant. Scope any mutations to authorized local test data.
+- Tab and Shift+Tab through controls; test arrows, Enter, Space, and Escape as the widget requires. Disabled items neither execute nor take forbidden focus.
+- Menus and dialogs: initial focus, containment when modal, and focus return to the trigger. Native `dialog` details are in [ui-patterns.md](references/ui-patterns.md#focus-management).
+- Accessible names, roles, headings, and dynamic announcements: inspect the accessibility tree and an automated audit. Claim screen-reader verification only after using a real screen reader.
+- WCAG 2.2 additions: focused elements are not hidden by sticky content, pointer targets are at least 24×24 CSS px, dragging has a single-pointer alternative, and login allows paste and password managers. See the [accessibility checklist](../../references/accessibility-checklist.md).
+- Responsive content at the contract's breakpoints plus the affected transition width.
+- Real submission, persistence, errors and retry, and authorization states, using authorized local test data.
 
-If runtime capability is absent, record the exact blocker and unverified checks.
-Compilation, unit tests or a generated screenshot alone cannot prove the UI.
+If runtime capability is missing, record the exact blocker and the unverified checks. Compilation, unit tests, or a screenshot alone cannot prove the UI.
 
-### 5. Apply the finish gate and return evidence
+### 6. Apply the finish gate
 
-Inspect the rendered result against the design contract: hierarchy, alignment,
-spacing/type/color tokens, content wrapping/overflow, focus visibility, contrasts,
-loading/error/empty states and mobile behavior. Use real or realistic text.
-Avoid generic layouts, gradients or arbitrary values that conflict with the
-product. Fix task regressions; record unrelated baseline warnings briefly.
+Inspect the rendered result against the design contract: hierarchy, alignment, token use, overflow, focus visibility, contrast, states, and mobile behavior, with realistic text. Avoid generic layouts or arbitrary values that conflict with the product. Fix task regressions and run applicable test/build/type/lint gates.
 
-Run applicable test/build/type/lint gates. Return acceptance results, inspected
-screenshots/runtime evidence and unresolved blockers for review. Use
-`references/ui-patterns.md` for detailed architecture/design/state techniques
-and `../../references/accessibility-checklist.md` for relevant audit checks.
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). A design review stays a review; implementation continues through runtime verification and the finish gate before returning for Review.
 
 ## Common Rationalizations
 
 | Rationalization | Reality |
 |---|---|
 | "It renders, so done" | Exercise the accepted states and actions. |
-| "Accessibility later" | Semantics, focus and keyboard behavior are part of correctness. |
+| "Accessibility later" | Semantics, focus, and keyboard behavior are part of correctness. |
 | "Tests prove the layout" | Inspect the actual browser at relevant widths. |
-| "The dialog has open, so focus is trapped" | Use modal behavior and test it. |
-| "Rollback the snapshot" | An old whole-list snapshot can erase a later success. |
+| "The dialog has `open`, so focus is trapped" | Use modal behavior and test it. |
 
 ## Red Flags
 
-- Existing tokens/component conventions ignored.
-- Mouse-only interaction, icon controls without names, color-only status.
-- Missing states or untested mobile/content overflow.
-- Screen-reader claims based only on an accessibility tree or axe score.
-- UI complete claim without actual runtime checks and finish review.
+- Existing tokens or component conventions ignored, or a new UI library added for one screen.
+- Mouse-only interaction, unnamed icon controls, color-only status, or tiny targets.
+- Missing states or untested mobile and content overflow.
+- Screen-reader claims based only on an accessibility tree or audit score.
+- A "UI complete" claim without runtime checks and the finish gate.
 
 ## Verification
 
+- [ ] Existing tokens, components, and contracts were discovered and reused.
+- [ ] A design contract exists for new screens or directions.
 - [ ] Accepted behaviors map to tests; valid RED/GREEN for changed behavior.
-- [ ] Existing component contracts and design system preserved.
-- [ ] Actual app interactions/states and relevant widths exercised.
-- [ ] Keyboard/focus and applicable accessibility checks have evidence.
+- [ ] Real app interactions, states, and relevant widths were exercised.
+- [ ] Keyboard, focus, and WCAG 2.2 AA checks have evidence.
 - [ ] Rendered finish inspected; relevant gates pass; omissions explicit.
-- [ ] Evidence returned to coordinator for review and next authorized phase.

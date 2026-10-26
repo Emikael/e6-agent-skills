@@ -23,6 +23,10 @@
       {
         "prompt": "Deploy the current build to staging",
         "owner": "e6-shipping-and-launch"
+      },
+      {
+        "prompt": "Stress-test this high-stakes migration plan for hidden failure modes",
+        "owner": "e6-doubt-driven-development"
       }
     ]
   },

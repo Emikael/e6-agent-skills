@@ -52,6 +52,10 @@ These runs deliberately select a skill. They measure compliance after selection,
 
 The catalog includes full-workflow continuation, exact acceptance-to-test/runtime evidence, unavailable browser/computer capabilities, preserved user authorization, test-only RED delivery, bounded delegation, semantic contract preservation, and irreversible recovery cases. The Caveman dialogue case verifies concise output while retaining negation, units, errors, ownership, and uncertainty.
 
+## Benchmark
+
+To compare whole skill packs (e6, Superpowers, a no-skills baseline) on the same tasks with hidden acceptance tests, mutation scoring, and a simulated user, use the [SDLC benchmark](benchmark/README.md). Results: [docs/benchmark-results.md](../docs/benchmark-results.md).
+
 ## Plugin evals (Claude Code)
 
 `claude plugin eval` (Claude Code 2.1.269 or later) loads the whole plugin, every skill at once, runs the cases under `evals/plugin/`, and scores each case with and without the plugin. It complements Tier 2 rather than replacing it: Tier 2 checks that a description carries the vocabulary users say; this checks that Claude Code's own router picks the skill on a natural prompt, and what the skill adds to the reply (the `Δ` column).
@@ -113,4 +117,4 @@ Every skill ships with an eval file. When you add `skills/<name>/`, add `evals/c
 
 ## Metrics to watch
 
-The Tier-2 run prints a **trigger rank-1 rate** (share of positive prompts that rank their skill first, not merely top-k). CI runs with `--min-rank1 95`, leaving useful headroom below the checked-in 100% baseline so an unrelated description edit does not immediately turn CI red. Raise the floor as routing improves; never lower it to make a regression pass. Falling numbers mean descriptions are drifting toward each other. The collision check errors at ≥75% pairwise description similarity and warns at ≥50%. When these evals surface a description-vocabulary gap (see [#351](https://github.com/addyosmani/agent-skills/issues/351) for the original examples), fix the description, not the prompt.
+The Tier-2 run prints a **trigger rank-1 rate** (share of positive prompts that rank their skill first, not merely top-k). CI runs with `--min-rank1 95`, leaving useful headroom below the checked-in 100% baseline so an unrelated description edit does not immediately turn CI red. Raise the floor as routing improves; never lower it to make a regression pass. Falling numbers mean descriptions are drifting toward each other. The collision check errors at ≥75% pairwise description similarity and warns at ≥50%. When these evals surface a description-vocabulary gap, fix the description, not the prompt.

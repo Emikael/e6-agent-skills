@@ -23,6 +23,14 @@
       {
         "prompt": "Simplify this working function for readability",
         "owner": "e6-code-simplification"
+      },
+      {
+        "prompt": "Write a failing test first for the new date parser, then make it pass",
+        "owner": "e6-test-driven-development"
+      },
+      {
+        "prompt": "The GitHub Actions pipeline went red on main after we changed the workflow file",
+        "owner": "e6-ci-cd-and-automation"
       }
     ]
   },

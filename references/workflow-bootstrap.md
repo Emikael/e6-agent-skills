@@ -1,3 +1,11 @@
 # e6 Workflow Bootstrap
 
-For engineering tasks, load `using-e6-agent-skills` through the host's skill mechanism or read its installed `SKILL.md`. Use `e6-caveman` for concise prose and delegation. The router coordinates applicable phases through verified handoff; load specialists only when needed. Existing task authorization persists. Honor narrower requests and an explicitly selected alternative workflow. Host instructions, user instructions, and applicable project rules take priority. Keep one coordinator. An assigned subagent follows its scoped task and returns evidence instead of starting another lifecycle. Never load the whole catalog, copy full history to workers, or claim checks you did not run. Ordinary conversation needs no workflow.
+For engineering work, load `using-e6-agent-skills` (host skill loader, or read its `SKILL.md`) before the first action; it is the full procedure. Even when you do not load it, these rules apply to every code change:
+1. Restate the outcome as numbered acceptance criteria before editing.
+2. If the request leaves a behavior-changing value open (limits, windows, error codes, roles), ask up to three questions with recommended defaults; if no one can answer, use the defaults and report them.
+3. Write a failing test for each criterion, watch it fail, then implement.
+4. Run the project's tests, then exercise the change for real (call the endpoint, run the CLI).
+5. Review your own diff before finishing: correctness, edge cases, security, no narrating comments.
+6. Finish with what changed, each criterion with its test and result, what you ran, and open decisions.
+
+Host, user, and project rules take priority; plan mode or a requested approval pauses. Keep one coordinator; a subagent follows its packet and returns evidence. Use `e6-caveman`. Ordinary conversation needs no workflow.

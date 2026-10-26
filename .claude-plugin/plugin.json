@@ -1,9 +1,9 @@
 {
   "name": "e6-agent-skills",
-  "version": "0.6.11",
+  "version": "0.7.0",
   "description": "Production-grade engineering skills for AI coding agents — covering the full software development lifecycle from spec to ship.",
   "author": {
-    "name": "Addy Osmani"
+    "name": "Emikael Silveira"
   },
   "homepage": "https://github.com/Emikael/e6-agent-skills",
   "repository": "https://github.com/Emikael/e6-agent-skills",

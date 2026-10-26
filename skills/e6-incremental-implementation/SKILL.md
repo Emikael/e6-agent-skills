@@ -7,102 +7,64 @@ description: Use when implementing the next task from a plan as a small verifiab
 
 ## Overview
 
-Build thin, verifiable slices. Read the task, prove behavior with a failing test,
-implement it, run it, and checkpoint before expanding. Each slice leaves a
-working system.
+Build thin, verifiable slices. Read the task, prove behavior with a failing test, implement it, run it, and checkpoint before expanding. Each slice leaves a working system.
 
 ## When to Use
 
 - Multi-file changes, features from a plan, scoped refactoring.
-- Feature flags or work too large to land safely in one step.
-- A minimal single-function change can use the same test/verify loop without
-  inventing a multi-slice plan.
+- Work too large to land safely in one step, including work behind a feature flag.
+- A minimal single-function change can use the same test/verify loop without inventing a multi-slice plan.
 
-## Workflow handoff
+**Not for:** unsettled requirements → `e6-spec-driven-development`; breaking work into multiple tasks → `e6-planning-and-task-breakdown`; behavior-preserving cleanup → `e6-code-simplification`.
 
-Use `e6-caveman` for prose and delegation. If this is a standalone engineering
-request with no active workflow, load `using-e6-agent-skills` once. Otherwise,
-update phase evidence and return to the coordinator. Consult
-`../../references/workflow-contract.md` as needed; do not reload recursively.
-Continue the authorized task through remaining slices and review; do not stop
-at the first passing increment.
+This skill owns the slice loop. Domain skills such as `e6-frontend-ui-engineering` and `e6-api-and-interface-design` supply checks for a slice; do not reload this skill from them.
 
 ## Process
 
 ### 1. Load the active task
 
-Read applicable project rules, spec, plan/task status, acceptance IDs, touched
-implementation/tests, relevant contracts and repository verification commands.
-Use `e6-context-engineering` when context is missing or stale. Inspect actual
-working-tree state; preserve existing edits and baseline failures.
+Read project rules, the spec, the task and its status in `tasks/todo.md` (or inline state), requirement IDs, touched code and tests, relevant contracts, and verification commands. Use `e6-context-engineering` when context is missing or stale. Inspect the actual working tree; preserve existing edits and baseline failures.
 
-If no adequate task/acceptance exists, return to the workflow's understanding
-or planning phase. Resolve routine choices from evidence. Ask only for a
-material decision that existing scope and context cannot settle.
+If no adequate task or acceptance exists, return to the workflow's Understand or Plan phase. Resolve routine choices from evidence. Ask only for a material decision that existing scope and context cannot settle.
 
 ### 2. Choose a working slice
 
-Name one logical outcome, its acceptance criteria, owned paths, dependencies
-and verification. Prefer vertical slices: one useful user action across the
-needed layers. Contract-first work may use a typed contract, backend + boundary
-tests, frontend matching that contract, then integration. Mark mocks as mocks;
-they are not end-to-end evidence. Prove uncertain dependencies early.
+Name one outcome, its acceptance criteria, owned paths, dependencies, and verification. Prefer vertical slices: one user action across the needed layers. Contract-first work may go typed contract → backend with boundary tests → frontend matching the contract → integration. Mark mocks as mocks; they are not end-to-end evidence. Prove uncertain dependencies early.
 
-Keep slices small enough to diagnose. A rough 100-line signal is useful, not a
-reason to split tightly coupled changes into broken intermediate states.
+Size slices by the shared [sizing rule](../e6-planning-and-task-breakdown/SKILL.md#4-size-order-and-checkpoint). Never split tightly coupled changes into broken intermediate states.
 
 ### 3. RED → GREEN → verify
 
-1. Follow `e6-test-driven-development`: for changed behavior, derive an acceptance
-   test and observe its intended failure before implementation. For preserved
-   behavior/refactoring, run baseline or characterization checks before edits;
-   do not invent a failure.
-2. Implement the smallest complete behavior. Reuse existing patterns; no generic
-   abstraction for hypothetical requirements or adjacent cleanup.
-3. Run focused tests and applicable repository build/type/lint gates.
-4. Execute the slice through its actual local entry point. For UI, use
-   `e6-frontend-ui-engineering` and `e6-browser-testing-with-devtools`. For API
-   boundaries, use `e6-api-and-interface-design` and real request checks.
-5. If an unexpected failure appears, stop adding slices. Use
-   `e6-debugging-and-error-recovery`, preserve evidence, fix the cause and reverify.
+1. Follow `e6-test-driven-development`. For changed behavior, derive an acceptance test and observe its intended failure before implementing. For preserved behavior or refactoring, run baseline or characterization checks before editing; do not invent a failure.
+2. Implement the smallest complete behavior. Reuse existing patterns. Add no generic abstraction for hypothetical requirements and no adjacent cleanup. Follow [code quality](../../references/code-quality.md): no comments that restate the code; a rule worth a comment becomes a test or a type.
+3. Run focused tests and the applicable build/type/lint gates.
+4. Execute the slice through its real local entry point, using the domain skill's checks: `e6-frontend-ui-engineering` and `e6-browser-testing-with-devtools` for UI, `e6-api-and-interface-design` and real requests for API boundaries.
+5. On an unexpected failure, stop adding slices. Use `e6-debugging-and-error-recovery`, preserve the evidence, fix the cause, and reverify.
 
-Each verification command runs after a change that can affect it. Do not rerun
-an unchanged successful check for reassurance. Code, dependencies, configuration,
-environment and relevant state can invalidate evidence.
+Run each check after a change that can affect it; do not rerun an unchanged passing check for reassurance. Changes to code, dependencies, configuration, or environment invalidate earlier evidence.
 
 ### 4. Checkpoint and continue
 
-Record acceptance IDs satisfied, paths changed, test/runtime evidence, blockers
-and the next slice in the active task/status artifact. Commit a focused slice
-only when authorized by the user or required by the repository workflow; follow
-`e6-git-workflow-and-versioning`. Otherwise leave a reviewable uncommitted diff.
-Do not stage, erase or tidy unrelated user changes to make the tree clean.
+Record in `tasks/todo.md` (or inline state) the requirement IDs satisfied, paths changed, test and runtime evidence, blockers, and the next slice. Before compaction or a long pause, update the workflow state per the contract's [Compaction and Resume](../../references/workflow-contract.md#compaction-and-resume).
 
-Carry the current context and verified state forward. Continue automatically
-within the accepted scope; a working first slice does not complete a multi-slice
-feature.
+Commit a focused slice only when the user authorized it or the repository workflow requires it; follow `e6-git-workflow-and-versioning`. Otherwise leave a reviewable uncommitted diff. Never stage, erase, or tidy unrelated user changes to make the tree clean.
 
-### 5. Finish the task
+Continue automatically within accepted scope. A working first slice does not complete a multi-slice feature.
 
-Verify all accepted outcomes together, including the real integrated flow.
-Apply `../../references/definition-of-done.md`, then return evidence for review,
-fixes, documentation and authorized handoff/shipping. Deployment or merge needs
-its own authorization; successful local slices do not grant it.
+### 5. Keep every intermediate state working
 
-## Rollout and rollback rules
+- Each intermediate state builds and existing behavior stays usable.
+- Hide incomplete user-facing work behind the project's established feature flag, off by default, and verify both states. Flag ownership, cohorts, and cleanup belong to `e6-shipping-and-launch`.
+- Replace used code by adding the replacement, migrating callers, then removing old code. Schema, data, and consumer transitions follow `e6-deprecation-and-migration`.
+- Record unrelated findings briefly; do not turn them into unrequested work.
 
-- Each intermediate state builds and existing behavior remains usable.
-- Hide incomplete user-facing work behind the project's established feature
-  flag, disabled by default. Verify both enabled and disabled behavior.
-- Use conservative defaults; new side effects are explicit.
-- Make rollback practical. For schema/data changes, use the project's migration
-  procedure and verify data compatibility; a nominal down migration alone is
-  not a proven recovery path.
-- Replace used code by adding the replacement, migrating callers, then removing
-  old code in working slices. Keep replacement atomic when separation would
-  break the system.
-- Scope each slice to the task. Record unrelated findings briefly; do not turn
-  them into unrequested work or routine permission questions.
+### 6. Finish the task
+
+Verify all accepted outcomes together, including the real integrated flow. Apply the [Definition of Done](../../references/definition-of-done.md), then return evidence for review. Deployment or merge needs its own authorization; successful local slices do not grant it.
+
+## Workflow Handoff
+
+Return scope, evidence, blockers, and next action per the [workflow contract](../../references/workflow-contract.md#handoff). Continue through all slices of the authorized task before returning for Verify and Review; do not stop at the first passing increment.
 
 ## Common Rationalizations
 
@@ -111,23 +73,22 @@ its own authorization; successful local slices do not grant it.
 | "Implement everything, test later" | RED and runtime checks happen per slice. |
 | "The two-day draft is nearly done" | Sunk effort does not validate an untested batch. |
 | "A build proves the feature works" | Execute the accepted behavior through the real entry point. |
-| "Every slice must be committed" | Checkpoint always; commit only within authorization/workflow. |
+| "Every slice must be committed" | Checkpoint always; commit only within authorization or repository workflow. |
 | "Delete first, replace next" | Every intermediate state must work. |
 
 ## Red Flags
 
 - New behavior written before acceptance tests; big unverified batches.
-- Completing only the first slice then handing the task back.
+- Completing only the first slice, then handing the task back.
 - Broken intermediate builds or exposed incomplete features.
 - Unrelated refactors, broad staging, or user edits erased for a clean tree.
 - End-to-end claims based on mock data or compilation.
 
 ## Verification
 
-- [ ] Every slice maps to accepted criteria: RED/GREEN for changed behavior,
-  baseline/characterization for preserved behavior.
+- [ ] Every slice maps to accepted criteria: RED/GREEN for changed behavior, baseline/characterization for preserved behavior.
 - [ ] Each intermediate state works; relevant tests and gates pass.
-- [ ] Integrated local/runtime acceptance flow actually executed.
-- [ ] Flags and recovery paths verified when applicable.
-- [ ] Slice status recorded; commits follow authorization and preserve user edits.
-- [ ] All task criteria and Definition of Done checked; evidence returned for review.
+- [ ] The integrated local runtime flow was actually executed.
+- [ ] Flags verified in both states when used.
+- [ ] Slice status recorded in one place; commits follow authorization and preserve user edits.
+- [ ] All task criteria and the Definition of Done checked; evidence returned for review.

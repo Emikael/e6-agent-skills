@@ -4,11 +4,33 @@
 
 26 skills guide AI agents from feature context and acceptance criteria through implementation, tests, local runtime checks, review, and handoff. One coordinator loads specialists as needed; `e6-caveman` keeps communication concise.
 
-![e6-agent-skills: one coordinator connects Understand, Plan, Build, Verify, Review, and Handoff, supported by context on demand and concise communication](docs/images/e6-agent-skills.png)
+![e6-agent-skills: the using-e6-agent-skills Tech Lead runs Understand, Plan, Build, Verify, Review, and Handoff with a specialist team staffed by surface, a traceability matrix from criteria to runtime checks, concise e6-caveman communication, and on-demand skills](docs/images/e6-agent-skills.png)
 
 **Workflow:** Understand → Plan → Build → Verify → Review → Handoff.
 
-Implementation requests continue through the applicable phases within existing authorization. Plan-only, review-only, and test-only requests keep their scope. Commits and releases follow user authorization and project rules. See the [workflow contract](references/workflow-contract.md).
+Implementation requests continue through the applicable phases within existing authorization. Plan-only, review-only, and test-only requests keep their scope. Plan mode or a request to approve first stops for your approval. Project rules (`AGENTS.md`, `CLAUDE.md`, …) override pack defaults for artifact locations, local check scope, and browser consent. Commits and releases follow user authorization and project rules. See the [workflow contract](references/workflow-contract.md).
+
+**New in this revision:**
+- The coordinator classifies each request: question, trivial fast path, bug, feature, refactor, review, test, plan, CI/incident, or release.
+- The workflow contract is the single home for scales, artifacts, delegation, and handoff.
+- Every skill was revised.
+- New install paths for Claude Desktop/claude.ai, Grok Build, the Cursor plugin, and the Codex app.
+
+See the [improvement report](docs/skill-improvement-report.md).
+
+## Best Way to Use
+
+1. **Install for the whole workflow**, not just the skills: the Claude Code or Cursor plugin, or skills plus the one-command bootstrap rule. See [host setup](#quick-start).
+2. **Describe the outcome, scope, authorization, and "done when"** in one request. The coordinator announces each phase (`Using <skill> for <purpose>.`) and runs criteria → failing test → implementation → local runtime → review → handoff.
+3. **Pick the mode:**
+   - Ask plainly for medium work.
+   - Use `/spec` → `/plan` → `/build auto` to steer large work.
+   - Say "plan first, wait for approval" when you want a gate.
+   - Small fixes take the fast path automatically.
+4. **Put team rules in project files**, not prompts: where plans may live, which checks run locally, what needs consent. The agent records and follows them.
+5. **Keep one router.** Borrow individual skills from other packs; don't stack coordinators.
+
+Read the [usage guide](docs/usage-guide.md). For a worked, copy-ready prompt on a real multi-surface repository, see the [E6 Code feature prompt](docs/prompts/e6code-feature-prompt.md).
 
 ---
 
@@ -30,7 +52,7 @@ Nine lifecycle command wrappers are provided for Claude Code and Gemini CLI. Oth
 
 Want the whole workflow from one request? Install the complete pack and [activate the coordinator](docs/workflow-activation.md). `using-e6-agent-skills` gathers context, defines criteria, plans, builds with tests, runs locally, reviews, and hands off. `/build auto` completes the whole requested plan using existing authorization; commits and releases follow project rules and user scope.
 
-See the [SDLC workflow change report](docs/sdlc-workflow-report.md) for the audit, implemented improvements, and verification limits.
+See the [improvement report](docs/skill-improvement-report.md) for this revision, and the earlier [SDLC workflow change report](docs/sdlc-workflow-report.md) for the first audit.
 
 The Claude plugin registers a compact startup bootstrap. Other hosts can use the idempotent project-rule installer. Native skill selection remains available; activation and model compliance need behavioral verification.
 
@@ -53,6 +75,13 @@ node e6-agent-skills/scripts/install-workflow-bootstrap.js \
 ```
 
 Node.js is required for the installer and repository checks. The Claude startup hook uses Bash. See the [activation guide](docs/workflow-activation.md) for host-specific wiring and upgrade checks.
+
+**Self-contained skills for any skills folder:** build portable copies that carry the shared checklists they link to. This works for `.cursor/skills`, `.agents/skills`, `.grok/skills`, and other skills folders, or produces one ZIP per skill for claude.ai and Claude Desktop uploads:
+
+```bash
+node e6-agent-skills/scripts/build-portable-skills.js --out /path/to/project/.agents/skills
+node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip
+```
 
 **Skill-only installation:** the open [skills CLI](https://github.com/vercel-labs/skills) supports Claude Code, Cursor, Codex, Copilot, and other agents:
 
@@ -113,9 +142,43 @@ claude --plugin-dir ./e6-agent-skills
 </details>
 
 <details>
+<summary><b>Claude Desktop and claude.ai</b></summary>
+
+- **Claude Code in the Desktop app's Code tab:** use the plugin above.
+- **Claude apps (claude.ai chat, Desktop chat, Cowork):** enable code execution, build one ZIP per skill, and upload each under Customize > Skills:
+
+  ```bash
+  node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip
+  ```
+
+The apps run no hooks or slash commands, so ask for the e6 workflow by name or put the bootstrap in a Project's instructions. See [docs/claude-desktop-setup.md](docs/claude-desktop-setup.md).
+
+</details>
+
+<details>
 <summary><b>Cursor</b></summary>
 
-Put discovered skills under `.cursor/skills/` and a compact coordinator policy in `.cursor/rules/*.mdc`. Keep the complete pack accessible for shared references and helpers. See [docs/cursor-setup.md](docs/cursor-setup.md).
+Choose one of three routes:
+- **Plugin (local):** link a clone into `~/.cursor/plugins/local/`. The `.cursor-plugin` manifest exposes the skills and a `sessionStart` bootstrap.
+- **Skills:** build portable skills into `.cursor/skills/`, then add the always-applied rule with `install-workflow-bootstrap.js --host cursor`.
+- **Rule only:** add the rule and point it at a full clone.
+
+See [docs/cursor-setup.md](docs/cursor-setup.md).
+
+</details>
+
+<details>
+<summary><b>Grok Build</b></summary>
+
+Build portable skills into `.grok/skills/` or `~/.grok/skills/`, then add the `AGENTS.md` bootstrap:
+
+```bash
+node e6-agent-skills/scripts/build-portable-skills.js --out ~/.grok/skills
+node e6-agent-skills/scripts/install-workflow-bootstrap.js \
+  --project /path/to/project --pack ./e6-agent-skills --host grok --write
+```
+
+Confirm with `grok inspect`. See [docs/grok-build-setup.md](docs/grok-build-setup.md).
 
 </details>
 
@@ -168,7 +231,7 @@ Add a compact coordinator rule pointing to the complete pack. Load skill bodies 
 <details>
 <summary><b>OpenCode</b></summary>
 
-Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. Optional slash commands can be added under `.opencode/commands/`.
+Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. No OpenCode command wrappers ship with the pack; you can author your own under `.opencode/commands/`.
 
 See [docs/opencode-setup.md](docs/opencode-setup.md).
 
@@ -198,7 +261,7 @@ codex plugin marketplace add Emikael/e6-agent-skills
 codex plugin add e6-agent-skills@e6-agent-skills
 ```
 
-The first command registers the marketplace; the second installs the plugin. Codex reads the root `skills/` directory through `.codex-plugin/plugin.json`. Start a new session and select a skill from the host's picker. In the CLI, explicit skill mentions use `$`; plugin skills are namespaced, for example `$e6-agent-skills:using-e6-agent-skills`. Add the compact project bootstrap for whole-workflow requests. See [docs/codex-setup.md](docs/codex-setup.md).
+The first command registers the marketplace; the second installs the plugin. The Codex app then lists it under **Plugins**. Codex reads the root `skills/` directory through `.codex-plugin/plugin.json`. Start a new session and select a skill from the host's picker. In the CLI, explicit skill mentions use `$`; plugin skills are namespaced, for example `$e6-agent-skills:using-e6-agent-skills`. Add the compact project bootstrap for whole-workflow requests. See [docs/codex-setup.md](docs/codex-setup.md).
 
 </details>
 
@@ -303,14 +366,22 @@ The commands above are entry points. The pack includes 26 skills total — 24 li
 
 ## Agent Personas
 
-Pre-configured specialist personas for targeted reviews:
+A specialist team, coordinated by the Tech Lead (the `using-e6-agent-skills` coordinator), staffed only when a change touches its surface ([roster](references/team.md)):
 
-| Agent | Role | Perspective |
+| Agent | Role | Guarantees |
 |-------|------|-------------|
-| [code-reviewer](agents/code-reviewer.md) | Senior Staff Engineer | Five-axis code review with "would a staff engineer approve this?" standard |
-| [test-engineer](agents/test-engineer.md) | QA Specialist | Test strategy, coverage analysis, and the Prove-It pattern |
-| [security-auditor](agents/security-auditor.md) | Security Engineer | Vulnerability detection, threat modeling, OWASP assessment |
-| [web-performance-auditor](agents/web-performance-auditor.md) | Web Performance Engineer | Core Web Vitals audit with Quick/Deep modes and a metric-honesty rule; run it via `/webperf` |
+| [tech-lead](agents/tech-lead.md) | Tech Lead | Staffing, sequencing, merged findings, and the detailed final explanation |
+| [product-owner](agents/product-owner.md) | Product Owner | Complete, testable acceptance criteria and the business context; asks about open values |
+| [ui-ux-designer](agents/ui-ux-designer.md) | UI/UX Designer | Design contract and experience review |
+| [backend-engineer](agents/backend-engineer.md) | Backend Engineer | Clean-architecture services, APIs, and data access, built or reviewed |
+| [frontend-engineer](agents/frontend-engineer.md) | Frontend Engineer | Components, states, and accessibility, built or reviewed |
+| [qa-engineer](agents/qa-engineer.md) | QA Engineer | Test plan, requirement traceability, delivery sign-off |
+| [security-auditor](agents/security-auditor.md) | Security Engineer | Threat modeling and vulnerability review |
+| [sre-engineer](agents/sre-engineer.md) | SRE | Production readiness: deploy, config, migrations, observability, rollback |
+| [code-reviewer](agents/code-reviewer.md) | Senior Staff Engineer | Five-axis review against the [code-quality bar](references/code-quality.md) |
+| [web-performance-auditor](agents/web-performance-auditor.md) | Web Performance Engineer | Core Web Vitals audit; run it via `/webperf` |
+
+Specialists exchange packets and findings in `e6-caveman` `ultra` (paths, not content); the user gets full sentences.
 
 See [docs/agents.md](docs/agents.md) for the decision matrix, orchestration rules, and how personas compose with skills and slash commands.
 
@@ -323,14 +394,16 @@ Quick-reference material that skills pull in when needed:
 | Reference | Covers |
 |-----------|--------|
 | [workflow-bootstrap.md](references/workflow-bootstrap.md) | Compact host/project policy selecting the coordinator and concise communication |
-| [workflow-contract.md](references/workflow-contract.md) | Phase gates, scope, acceptance tests, runtime/computer checks, delegation, and learning |
+| [workflow-contract.md](references/workflow-contract.md) | Scope, plan mode, project overrides, fast path, phase gates, glossary and severity scales, artifacts and state template, tests, runtime checks, delegation, handoff |
 | [definition-of-done.md](references/definition-of-done.md) | Standing project bar applied alongside each task's acceptance criteria |
-| [testing-patterns.md](references/testing-patterns.md) | Test structure, naming, mocking, React/API/E2E examples, anti-patterns (JavaScript/TypeScript) |
+| [testing-patterns.md](references/testing-patterns.md) | Test levels and sizes, state-based tests, DAMP, test doubles, structure and naming, React/API/E2E examples (JavaScript/TypeScript), anti-patterns |
 | [security-checklist.md](references/security-checklist.md) | Pre-commit checks, auth, input validation, headers, CORS, OWASP Top 10 |
 | [performance-checklist.md](references/performance-checklist.md) | Core Web Vitals targets, frontend/backend checklists, measurement commands |
 | [accessibility-checklist.md](references/accessibility-checklist.md) | Keyboard nav, screen readers, visual design, ARIA, testing tools |
 | [observability-checklist.md](references/observability-checklist.md) | On-call questions, structured logging, RED/USE metrics, tracing, symptom-based alerting, pre-launch gate |
-| [orchestration-patterns.md](references/orchestration-patterns.md) | One coordinator, independent bounded workers, sequential fallback, and ownership |
+| [team.md](references/team.md) | Specialist roster, staffing rules, packet/return format, findings schema with confidence, model tiers |
+| [code-quality.md](references/code-quality.md) | SOLID, clean architecture, clean code, comment policy, test quality |
+| [orchestration-patterns.md](references/orchestration-patterns.md) | One coordinator, independent bounded workers, high-risk review fan-out, sequential fallback, and ownership |
 
 ---
 
@@ -377,7 +450,7 @@ node scripts/validate-commands.js
 node scripts/run-evals.js --min-rank1 95
 ```
 
-There are 65 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
+There are 70 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
 
 ---
 
@@ -388,13 +461,14 @@ The portable core stays in shared directories. Host-specific paths are native di
 | Layer / consumer | Repository paths | Purpose |
 |---|---|---|
 | Shared workflow core | `skills/` (26 skills) | Portable `SKILL.md` workflows used by every integration |
-| Shared review material | `agents/` (4 personas), `references/` (9 documents) | Specialist reviewers, workflow contracts, and pack-level checklists |
+| Shared review material | `agents/` (10 personas), `references/` (11 documents) | Specialist reviewers, workflow contracts, and pack-level checklists |
 | Claude Code adapter | `.claude/commands/` (9 commands), `.claude-plugin/`, `hooks/` | Slash-command wrappers, marketplace metadata, and lifecycle hooks |
 | Gemini CLI adapter | `.gemini/commands/` (9 commands) | Gemini-native TOML command wrappers |
 | Antigravity CLI adapter | `commands/` (9 commands), `plugin.json` | Legacy TOML wrappers and the root plugin manifest; see the [known wrapper limitation](docs/antigravity-setup.md#lifecycle-workflows-and-command-compatibility) |
-| Codex adapter | `.codex-plugin/`, `.agents/plugins/` | Codex plugin metadata and marketplace registration; Codex consumes `skills/` directly |
+| Codex adapter | `.codex-plugin/`, `.agents/plugins/` | Codex plugin metadata and marketplace registration for the CLI and app; Codex consumes `skills/` directly |
+| Cursor adapter | `.cursor-plugin/`, `hooks/hooks-cursor.json` | Cursor plugin manifest and `sessionStart` bootstrap (same script as Claude) |
 | GitHub Copilot CLI adapter | `plugin.json` | Root plugin metadata; Copilot CLI discovers `skills/` by convention and does not register the lifecycle wrappers |
-| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, installation, routing evals, and CI |
+| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, bootstrap installer, portable skill builder, routing evals, and CI |
 | Documentation | `docs/` | Universal guidance and per-tool setup guides |
 
 Tools without a checked-in adapter directory install or copy the shared `skills/` core into their own native location. The [Quick Start](#quick-start) links the setup guide for each supported host.
@@ -413,7 +487,44 @@ Skills bake in best practices from Google's engineering culture — including co
 
 ## How it compares
 
-See the [workflow design sources](docs/workflow-design-sources.md) for patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses. The [comparison guide](docs/comparison.md) provides background on other skill packs; its external single-task experiment does not measure these latest changes.
+### e6 vs. Superpowers, measured
+
+The [benchmark](evals/benchmark/README.md) ran both packs and a no-skills baseline on the same five tasks: a feature, a bug fix, a refactor, an ambiguous requirement, and a tenant-isolation fix. Each task ran five times per arm, all in one session, with the same model and effort. A simulated user answered questions from an answer key, hidden acceptance tests and mutants scored the result, and a blind judge ranked the final diffs.
+
+The runs used two modes:
+- **Natural:** a plain request, where the pack must activate itself.
+- **Invoked:** each pack named in the first line.
+
+| Measure | Natural: baseline / e6 / Superpowers | Invoked: baseline / e6 / Superpowers |
+|---|---|---|
+| Composite score | 0.80 / **0.83** / 0.80 | 0.79 / **0.84** / **0.84** |
+| Test quality (mutants killed) | 0.65 / **0.79** / 0.69 | 0.63 / **0.84** / **0.84** |
+| All hidden tests pass | 92% / **100%** / 92% | 96% / **100%** / **100%** |
+| Blind judge ranked first | 4% / **84%** / 12% | 0% / 52% / 48% |
+| Asked about open requirements | 0% / 4% / 0% | 0% / 16% / 0% |
+| Agent cost per run | $0.058 / $0.093 / $0.074 | $0.058 / $0.159 / $0.104 |
+| e6 − Superpowers composite (95% CI); win/tie/loss | +0.03 [−0.01, 0.06]; 8/12/5 | −0.00 [−0.04, 0.04]; 7/15/3 |
+
+What the numbers say:
+- **Plain request:** e6 writes stronger tests, and the judge preferred its diffs in 84% of runs. Its composite lead over Superpowers is within noise.
+- **Invoked by name:** the two packs tie. Both beat the baseline, with intervals that exclude zero. e6 alone asked about the open requirement.
+- **Costs and gaps:** e6 costs more per run, about 26% more on a plain request and 53% more when invoked. Neither pack ran a review or a runtime check on these tasks. The tasks are small; larger multi-file tasks are the next step to separate the packs.
+
+**Caveat:** the published runs predate a harness fix. Only the e6 arms carried the tasks' hidden tests and answer keys inside their own plugin directory, and only e6's examples echoed one task's answers. Every arm's plugin directory also sat a few levels above the task folders. Whether any agent read those files was not measured, so treat e6's numbers as upper bounds until a re-run ([details](docs/benchmark-results.md#benchmark-results-e6-agent-skills-vs-superpowers)).
+
+Full results, per-task tables, and threats to validity are in [benchmark results](docs/benchmark-results.md). Reproduce them with `node scripts/run-benchmark.js`.
+
+### Design differences
+
+| | e6-agent-skills | Superpowers |
+|---|---|---|
+| Activation | A short session bootstrap and a route table; the coordinator acts as Tech Lead | Its full entry skill is injected; a "1% chance → must invoke" rule |
+| Approval | Reuses the authorization you already gave; asks only about material values, each with a recommended default | You pick an approach and approve a design before implementation |
+| Execution | A [specialist roster](references/team.md) staffed by surface, with a traceability matrix from requirement to evidence | A linear pipeline: brainstorm → plan → a fresh subagent per task, each signed off by a task reviewer |
+| Coverage | Define through Ship, including security, observability, and launch | The inner build loop |
+| Evals | In-repo routing evals in CI, behavioral scenarios, and this benchmark | A separate eval lab and pressure-testing methodology |
+
+The [comparison guide](docs/comparison.md) covers more skill packs and has a line-by-line [coordinator vs. bootstrap](docs/comparison.md#coordinator-vs-bootstrap-using-e6-agent-skills-and-superpowersusing-superpowers) comparison. The [workflow design sources](docs/workflow-design-sources.md) list the patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses.
 
 ---
 
@@ -425,18 +536,8 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the format specification 
 
 ---
 
-## Team
-
-e6-agent-skills is built and maintained by:
-
-| | Name | GitHub | Role |
-|---|------|--------|------|
-| <img src="https://github.com/addyosmani.png?size=120" width="60" height="60" alt="Addy Osmani"> | **Addy Osmani** | [@addyosmani](https://github.com/addyosmani) | Creator |
-| <img src="https://github.com/federicobartoli.png?size=120" width="60" height="60" alt="Federico Bartoli"> | **Federico Bartoli** | [@federicobartoli](https://github.com/federicobartoli) | Collaborator |
-| <img src="https://github.com/nucliweb.png?size=120" width="60" height="60" alt="Joan León"> | **Joan León** | [@nucliweb](https://github.com/nucliweb) | Collaborator |
-
----
-
 ## License
 
 MIT - use these skills in your projects, teams, and tools.
+
+Forked from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).

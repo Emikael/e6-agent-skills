@@ -80,7 +80,7 @@ test('updates marked block while preserving content before and after it', t => {
   assert.ok(!installed.includes('old instructions'));
 });
 
-for (const [host, filename] of [['claude', 'CLAUDE.md'], ['opencode', 'AGENTS.md'], ['gemini', 'GEMINI.md']]) {
+for (const [host, filename] of [['claude', 'CLAUDE.md'], ['opencode', 'AGENTS.md'], ['gemini', 'GEMINI.md'], ['grok', 'AGENTS.md']]) {
   test(`writes ${filename} for ${host}`, t => {
     const f = fixture(t);
     const result = run(f, ['--write'], host);
@@ -90,6 +90,26 @@ for (const [host, filename] of [['claude', 'CLAUDE.md'], ['opencode', 'AGENTS.md
     assert.ok(!content.includes('Repository Overview'), 'do not copy contributor AGENTS.md');
   });
 }
+
+test('writes an always-applied Cursor rule and keeps an existing rule header', t => {
+  const f = fixture(t);
+  const rule = path.join(f.project, '.cursor', 'rules', 'e6-workflow.mdc');
+  const result = run(f, ['--write'], 'cursor');
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const content = fs.readFileSync(rule, 'utf8');
+  assert.match(content, /^---\ndescription: .+\nalwaysApply: true\n---\n/);
+  assert.ok(content.includes('Use e6 for engineering work'));
+  assert.equal(run(f, ['--check'], 'cursor').status, 0);
+
+  const customized = content.replace('alwaysApply: true', 'alwaysApply: false');
+  fs.writeFileSync(rule, customized);
+  fs.appendFileSync(path.join(f.pack, 'references', 'workflow-bootstrap.md'), 'Updated workflow.\n');
+  assert.equal(run(f, ['--write'], 'cursor').status, 0);
+  const updated = fs.readFileSync(rule, 'utf8');
+  assert.ok(updated.includes('alwaysApply: false'), 'user-edited frontmatter is preserved');
+  assert.ok(updated.includes('Updated workflow.'));
+  assert.equal(updated.split(START).length, 2);
+});
 
 test('rejects malformed or duplicate managed markers without changing content', t => {
   const f = fixture(t);

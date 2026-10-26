@@ -18,9 +18,10 @@ prevent activation; inspect the host's hook diagnostics in that case.
 
 These integrations expose skills, but this pack does not assume they execute
 Claude hook schemas. Add a compact project rule to select the e6 coordinator.
-The installer uses `AGENTS.md` for Codex/OpenCode, `GEMINI.md` for Gemini, and
-`CLAUDE.md` for a Claude rules-based setup. It preserves existing rules and
-updates only its marked block.
+The installer uses `AGENTS.md` for Codex, OpenCode, and Grok Build (`--host grok`),
+`GEMINI.md` for Gemini, `.cursor/rules/e6-workflow.mdc` for Cursor
+(`--host cursor`, always applied), and `CLAUDE.md` for a Claude rules-based setup.
+It preserves existing rules and updates only its marked block.
 
 ```bash
 # Preview first. --pack is the full clone/install root, not an individual skill.
@@ -41,6 +42,17 @@ Bash and does not need jq. For other hosts, add the short
 [bootstrap](../references/workflow-bootstrap.md) to their project instruction
 surface, with the installed pack path. Do not copy this repository's contributor
 `AGENTS.md` or `CLAUDE.md` into your project.
+
+## Cursor Plugin and Claude Apps
+
+The Cursor plugin (`.cursor-plugin/plugin.json`) registers `hooks/hooks-cursor.json`,
+which runs the same SessionStart script; it emits Cursor's `additional_context`
+when `CURSOR_PLUGIN_ROOT` is set. See [Cursor setup](cursor-setup.md).
+
+The Claude apps (claude.ai, Claude Desktop chat, Cowork) run no hooks. Upload
+self-contained skill ZIPs from `scripts/build-portable-skills.js --zip` and ask
+for the e6 workflow, or put the bootstrap in a Project's instructions. See
+[Claude Desktop setup](claude-desktop-setup.md).
 
 ## Natural Requests and Scope
 
