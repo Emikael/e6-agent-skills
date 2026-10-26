@@ -2,7 +2,7 @@
 
 Cursor combines **rules** (short always-on or file-scoped policies) with **skills** (full workflows loaded on demand) and **plugins** (packaged skills, rules, and hooks). This guide covers three ways to install the pack, from most to least complete. Whichever you choose, keep one coordinator (`using-e6-agent-skills`) and load skill bodies on demand; never paste whole `SKILL.md` files into rules.
 
-> Cursor's plugin and hook formats are evolving. Skill paths match E6 Code's Cursor skill discovery and Cursor's published docs as of October 2026. The plugin hook mirrors a working third-party Cursor plugin but was not exercised in this repository's CI; verify on your version.
+> Cursor's plugin and hook formats are evolving. Skill paths match E6 Code's Cursor skill discovery and Cursor's published docs as of October 2026. Per Cursor's [hooks reference](https://cursor.com/docs/agent/hooks), plugin hooks run from the plugin's install directory (`CURSOR_PLUGIN_ROOT`), so the relative `./hooks/session-start.sh` resolves, and `sessionStart` reads `additional_context`. The hook is unit-tested here but was not exercised in a live Cursor session in CI; verify on your version.
 
 ## Option A: Cursor plugin (skills + session bootstrap)
 
