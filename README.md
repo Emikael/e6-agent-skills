@@ -487,7 +487,42 @@ Skills bake in best practices from Google's engineering culture — including co
 
 ## How it compares
 
-See the [workflow design sources](docs/workflow-design-sources.md) for patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses. The [comparison guide](docs/comparison.md) provides background on other skill packs. It includes a side-by-side of this pack's coordinator and Superpowers' `using-superpowers` entry skill. Its external single-task experiment does not measure these latest changes.
+### e6 vs. Superpowers, measured
+
+The [benchmark](evals/benchmark/README.md) ran both packs and a no-skills baseline on the same five tasks: a feature, a bug fix, a refactor, an ambiguous requirement, and a tenant-isolation fix. Each task ran five times per arm, all in one session, with the same model and effort. A simulated user answered questions from an answer key, hidden acceptance tests and mutants scored the result, and a blind judge ranked the final diffs.
+
+The runs used two modes:
+- **Natural:** a plain request, where the pack must activate itself.
+- **Invoked:** each pack named in the first line.
+
+| Measure | Natural: baseline / e6 / Superpowers | Invoked: baseline / e6 / Superpowers |
+|---|---|---|
+| Composite score | 0.80 / **0.83** / 0.80 | 0.79 / **0.84** / **0.84** |
+| Test quality (mutants killed) | 0.65 / **0.79** / 0.69 | 0.63 / **0.84** / **0.84** |
+| All hidden tests pass | 92% / **100%** / 92% | 96% / **100%** / **100%** |
+| Blind judge ranked first | 4% / **84%** / 12% | 0% / 52% / 48% |
+| Asked about open requirements | 0% / 4% / 0% | 0% / 16% / 0% |
+| Agent cost per run | $0.058 / $0.093 / $0.074 | $0.058 / $0.159 / $0.104 |
+| e6 − Superpowers composite (95% CI); win/tie/loss | +0.03 [−0.01, 0.06]; 8/12/5 | −0.00 [−0.04, 0.04]; 7/15/3 |
+
+What the numbers say:
+- **Plain request:** e6 writes stronger tests, and the judge preferred its diffs in 84% of runs. Its composite lead over Superpowers is within noise.
+- **Invoked by name:** the two packs tie. Both beat the baseline, with intervals that exclude zero. e6 alone asked about the open requirement.
+- **Costs and gaps:** e6 costs more per run, about 26% more on a plain request and 53% more when invoked. Neither pack ran a review or a runtime check on these tasks. The tasks are small; larger multi-file tasks are the next step to separate the packs.
+
+Full results, per-task tables, and threats to validity are in [benchmark results](docs/benchmark-results.md). Reproduce them with `node scripts/run-benchmark.js`.
+
+### Design differences
+
+| | e6-agent-skills | Superpowers |
+|---|---|---|
+| Activation | A short session bootstrap and a route table; the coordinator acts as Tech Lead | Its full entry skill is injected; a "1% chance → must invoke" rule |
+| Approval | Reuses the authorization you already gave; asks only about material values, each with a recommended default | You pick an approach and approve a design before implementation |
+| Execution | A [specialist roster](references/team.md) staffed by surface, with a traceability matrix from requirement to evidence | A linear pipeline: brainstorm → plan → a fresh subagent per task, each signed off by a task reviewer |
+| Coverage | Define through Ship, including security, observability, and launch | The inner build loop |
+| Evals | In-repo routing evals in CI, behavioral scenarios, and this benchmark | A separate eval lab and pressure-testing methodology |
+
+The [comparison guide](docs/comparison.md) covers more skill packs and has a line-by-line [coordinator vs. bootstrap](docs/comparison.md#coordinator-vs-bootstrap-using-e6-agent-skills-and-superpowersusing-superpowers) comparison. The [workflow design sources](docs/workflow-design-sources.md) list the patterns adapted from Compound Engineering, Superpowers, ADHD, and Caveman, with inspected revisions and licenses.
 
 ---
 
