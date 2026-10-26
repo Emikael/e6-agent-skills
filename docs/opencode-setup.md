@@ -42,7 +42,7 @@ mkdir -p .opencode/skills
 cp -r .claude/skills/<skill-name> .opencode/skills/
 ```
 
-> **Note:** Per-skill installs copy only the skill directory itself. If a skill references shared files under `references/`, copy those into the installed skill directory or install the whole pack. See [#361](https://github.com/addyosmani/agent-skills/issues/361) for background.
+> **Note:** Per-skill installs copy only the skill directory itself. If a skill references shared files under `references/`, copy those into the installed skill directory or install the whole pack. To build self-contained copies with those files vendored, run `node scripts/build-portable-skills.js --out <dir>`.
 
 ### Option 2: Clone this repository
 

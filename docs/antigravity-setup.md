@@ -50,7 +50,7 @@ agy plugin list
 
 ## Lifecycle Workflows and Command Compatibility
 
-Antigravity's [migration tooling](https://www.agy.dev/docs/cli/gcli-migration/) reports the 9 legacy definitions in `commands/*.toml` as "converted to skills." In affected `agy` 1.1.x releases, validation succeeds but the converted wrappers do not appear in the slash-command or skill catalog. A successful `agy plugin validate` therefore confirms the files are well formed, not that `/build` and the other short wrappers are available. This was reported in the upstream pack as [addyosmani/agent-skills #445](https://github.com/addyosmani/agent-skills/issues/445) and is tracked in Antigravity as [antigravity-cli #788](https://github.com/google-antigravity/antigravity-cli/issues/788).
+Antigravity's [migration tooling](https://www.agy.dev/docs/cli/gcli-migration/) reports the 9 legacy definitions in `commands/*.toml` as "converted to skills." In affected `agy` 1.1.x releases, validation succeeds but the converted wrappers do not appear in the slash-command or skill catalog. A successful `agy plugin validate` therefore confirms the files are well formed, not that `/build` and the other short wrappers are available. This is tracked in Antigravity as [antigravity-cli #788](https://github.com/google-antigravity/antigravity-cli/issues/788).
 
 Use the native plugin skills directly while that importer limitation applies:
 
