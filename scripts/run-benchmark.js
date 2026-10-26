@@ -72,9 +72,14 @@ function pluginName(dir) {
   throw new Error(`No plugin manifest found in ${dir}`);
 }
 
-// Plugin content an agent may see. evals/ holds every task's hidden tests, reference
-// solutions, and answer keys, so it never ships with a local arm.
-const ARCHIVE_PATHSPEC = ['.', ':(exclude)evals'];
+// Only what the plugin loads ships with a local arm. evals/benchmark holds hidden tests,
+// reference solutions, and answer keys, and docs/ describes the tasks and their results.
+const PLUGIN_PATHS = ['.claude-plugin', '.claude/commands', 'commands', 'skills', 'agents', 'hooks', 'references', 'evals/plugin'];
+
+/** PLUGIN_PATHS present at commit; git archive rejects a pathspec that matches nothing. */
+function pluginPaths(commit, cwd = REPO_ROOT) {
+  return PLUGIN_PATHS.filter(entry => execFileSync('git', ['ls-tree', commit, '--', entry], { cwd, encoding: 'utf8' }).trim());
+}
 
 /** Materialize each arm's plugin into armsDir/<id>; returns arm descriptors. */
 function prepareArms(armIds, armsDir) {
@@ -89,7 +94,7 @@ function prepareArms(armIds, armsDir) {
     let description;
     if (source.type === 'local') {
       const commit = execFileSync('git', ['rev-parse', source.ref || 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-      const archive = execFileSync('git', ['archive', '--format=tar', commit, '--', ...ARCHIVE_PATHSPEC], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
+      const archive = execFileSync('git', ['archive', '--format=tar', commit, '--', ...pluginPaths(commit)], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
       execFileSync('tar', ['-x', '-C', dir], { input: archive });
       description = `this repository @ \`${commit.slice(0, 10)}\``;
     } else if (source.type === 'git') {
@@ -416,4 +421,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseOptions, hashTree, pluginName, prepareArms, runOne, loadRecords, writeReport, truncateDiff, ARCHIVE_PATHSPEC };
+module.exports = { parseOptions, hashTree, pluginName, prepareArms, runOne, loadRecords, writeReport, truncateDiff, PLUGIN_PATHS, pluginPaths };

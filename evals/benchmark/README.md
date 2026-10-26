@@ -5,7 +5,7 @@ This benchmark answers one question with measured numbers: given the same model,
 | Arm | What loads |
 |---|---|
 | `baseline` | Claude Code as shipped: built-in skills only, no skill pack |
-| `e6` | This repository as a plugin, snapshotted with `git archive` at the run's commit, without `evals/` |
+| `e6` | This repository as a plugin, snapshotted with `git archive` of its plugin paths at the run's commit |
 | `e6-prev` | The same, at the earlier commit `5e5a529` pinned in [`arms.json`](arms.json). Merge branches carrying it with a merge commit, not a squash, or that commit becomes unreachable and the arm cannot be built |
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers), pinned to a commit in [`arms.json`](arms.json) |
 
@@ -45,7 +45,7 @@ CI runs it.
 2. **Isolation.** The agent gets a new Claude config directory that holds only a copy of your credentials. The run uses:
    - an allowlisted environment, with no parent-session variables;
    - `--setting-sources project` and `--strict-mcp-config`;
-   - the arm's plugin via `--plugin-dir`, materialized in a temporary directory outside the repository. Local arms are a `git archive` without `evals/`, so no plugin carries hidden tests, reference solutions, or answer keys.
+   - the arm's plugin via `--plugin-dir`, materialized in a temporary directory outside the repository. Local arms archive only the plugin paths (`.claude-plugin`, commands, `skills`, `agents`, `hooks`, `references`, `evals/plugin`), so no plugin carries hidden tests, reference solutions, answer keys, or the docs that describe them.
 
    The session's `init` event must list exactly the arm's plugins, with Claude Code built-ins allowed. Otherwise the run is marked `contaminated` and excluded.
 3. **Same prompt everywhere.** "Implement the change described in REQUEST.md … Follow AGENTS.md. Tell me when you are done."

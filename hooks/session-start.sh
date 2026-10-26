@@ -14,6 +14,8 @@ ROUTER_FILE="$PACK_ROOT/skills/using-e6-agent-skills/SKILL.md"
 # files cannot contain NUL in Bash strings; other UTF-8 bytes pass through.
 json_escape() {
   local value="$1" code character escaped
+  # Bash 5.2 expands & in replacements; keep 3.2 through 5.x literal and identical.
+  shopt -u patsub_replacement 2>/dev/null || true
   value="${value//\\/\\\\}"
   value="${value//\"/\\\"}"
   for code in {1..31}; do

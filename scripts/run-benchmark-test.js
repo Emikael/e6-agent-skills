@@ -5,6 +5,7 @@
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { loadTasks, materializeTask, installReference, applyMutant, parseTap } = require('./lib/benchmark/tasks');
@@ -15,7 +16,7 @@ const { scoreRun, compositeScore, decisionPoints } = require('./lib/benchmark/sc
 const { bootstrapCI, diffCI, pairedDiffCI, winTieLoss, shuffle, mean } = require('./lib/benchmark/stats');
 const { buildSummary, renderMarkdown } = require('./lib/benchmark/report');
 const { execFileSync } = require('node:child_process');
-const { parseOptions, truncateDiff, ARCHIVE_PATHSPEC } = require('./run-benchmark');
+const { parseOptions, truncateDiff, pluginPaths } = require('./run-benchmark');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 
@@ -244,25 +245,45 @@ test('parseOptions handles flags, values, and positionals', () => {
   assert.throws(() => parseOptions(['run', '--model']), /Missing value/);
 });
 
-test('local arm archives exclude hidden tests, references, and answer keys', () => {
-  const listing = execFileSync('git', ['archive', '--format=tar', 'HEAD', '--', ...ARCHIVE_PATHSPEC], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
-  const names = execFileSync('tar', ['-t'], { input: listing, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\n');
-  assert.ok(names.includes('skills/using-e6-agent-skills/SKILL.md'), 'plugin content is archived');
-  assert.ok(names.includes('.claude-plugin/plugin.json'), 'plugin manifest is archived');
-  assert.deepEqual(names.filter(name => name.startsWith('evals/')), []);
+function armArchive(commit = 'HEAD') {
+  const tar = execFileSync('git', ['archive', '--format=tar', commit, '--', ...pluginPaths(commit)], { cwd: REPO_ROOT, maxBuffer: 256 * 1024 * 1024 });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-bench-arm-test-'));
+  execFileSync('tar', ['-x', '-C', dir], { input: tar });
+  const files = [];
+  const walk = current => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else files.push(path.relative(dir, full).split(path.sep).join('/'));
+    }
+  };
+  walk(dir);
+  return { dir, files };
+}
+
+test('local arm archives carry the plugin and nothing that describes the tasks', t => {
+  const { dir, files } = armArchive();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  for (const required of ['.claude-plugin/plugin.json', 'skills/using-e6-agent-skills/SKILL.md', 'hooks/hooks.json', 'references/workflow-bootstrap.md']) {
+    assert.ok(files.includes(required), `${required} is archived`);
+  }
+  assert.deepEqual(files.filter(file => /^(docs\/|README\.md$|evals\/benchmark\/)/.test(file)), []);
+  assert.ok(pluginPaths('5e5a529').includes('skills'), 'the pinned e6-prev commit archives too');
 });
 
-test('plugin content does not echo task-only codes from answer keys or hidden tests', () => {
-  const codes = file => new Set(fs.readFileSync(file, 'utf8').match(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/g) || []);
-  const readAll = dir => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }) : [])
-    .map(name => path.join(dir, String(name))).filter(file => fs.statSync(file).isFile());
-  const pluginText = ['skills', 'agents', 'references', 'hooks', '.claude/commands', 'commands']
-    .flatMap(dir => readAll(path.join(REPO_ROOT, dir))).map(file => fs.readFileSync(file, 'utf8')).join('\n');
+test('archived plugin content does not echo task-only codes from answer keys or hidden tests', t => {
+  const { dir, files } = armArchive();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const pluginText = files.map(file => fs.readFileSync(path.join(dir, file), 'utf8')).join('\n');
+  assert.ok(pluginText.includes('using-e6-agent-skills'), 'the scan reads real plugin content');
+  const codes = text => new Set(text.match(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/g) || []);
+  const read = dir => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
+    .flatMap(entry => (entry.isDirectory() ? read(path.join(dir, entry.name)) : [fs.readFileSync(path.join(dir, entry.name), 'utf8')]));
   for (const task of loadTasks()) {
-    const visible = new Set(readAll(path.join(task.dir, 'repo')).flatMap(file => [...codes(file)]));
-    const secret = [path.join(task.dir, 'answers.md'), ...readAll(path.join(task.dir, 'hidden'))]
-      .flatMap(file => [...codes(file)]).filter(code => !visible.has(code));
-    const echoed = [...new Set(secret)].filter(code => new RegExp(`\\b${code}\\b`).test(pluginText));
+    const visible = codes(read(path.join(task.dir, 'repo')).join('\n'));
+    const secret = [...codes([task.answers, ...read(path.join(task.dir, 'hidden'))].join('\n'))].filter(code => !visible.has(code));
+    assert.ok(task.id !== 'ambiguous-login-rate-limit' || secret.includes('RATE_LIMITED'), 'secret codes are extracted');
+    const echoed = secret.filter(code => new RegExp(`\\b${code}\\b`).test(pluginText));
     assert.deepEqual(echoed, [], `${task.id}: plugin content echoes ${echoed.join(', ')}`);
   }
 });
