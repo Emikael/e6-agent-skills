@@ -4,7 +4,7 @@
 
 26 skills guide AI agents from feature context and acceptance criteria through implementation, tests, local runtime checks, review, and handoff. One coordinator loads specialists as needed; `e6-caveman` keeps communication concise.
 
-![e6-agent-skills: one coordinator connects Understand, Plan, Build, Verify, Review, and Handoff, supported by context on demand and concise communication](docs/images/e6-agent-skills.png)
+![e6-agent-skills: the using-e6-agent-skills Tech Lead runs Understand, Plan, Build, Verify, Review, and Handoff with a specialist team staffed by surface, a traceability matrix from criteria to runtime checks, concise e6-caveman communication, and on-demand skills](docs/images/e6-agent-skills.png)
 
 **Workflow:** Understand → Plan → Build → Verify → Review → Handoff.
 
