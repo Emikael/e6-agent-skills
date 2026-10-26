@@ -19,7 +19,8 @@ json_escape() {
   for code in {1..31}; do
     printf -v character "\\$(printf '%03o' "$code")"
     printf -v escaped '\\u%04x' "$code"
-    value="${value//"$character"/"$escaped"}"
+    # Unquoted replacement: Bash 3.2 (macOS /bin/bash) keeps quotes there literally.
+    value="${value//"$character"/$escaped}"
   done
   printf '%s' "$value"
 }
