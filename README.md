@@ -132,6 +132,17 @@ Enable the plugin and start a new session to load its compact SessionStart boots
 > git config --global url."https://github.com/".insteadOf git@github.com:
 > ```
 
+**Updating:**
+
+```
+/plugin marketplace update e6-agent-skills
+/plugin update e6-agent-skills@e6-agent-skills
+```
+
+From a terminal: `claude plugin marketplace update e6-agent-skills && claude plugin update e6-agent-skills@e6-agent-skills`.
+
+Restart the session afterwards. Claude Code only offers an update when the manifest `version` changes. If the update does not apply, run `/plugin uninstall e6-agent-skills@e6-agent-skills` and install again. Each version is tagged (for example `0.7.0`) and published under [Releases](https://github.com/Emikael/e6-agent-skills/releases).
+
 **Local / development:**
 
 ```bash
@@ -288,6 +299,24 @@ Skills are plain Markdown - they work with any agent that accepts system prompts
 </details>
 
 
+
+## Updating
+
+Releases are tagged by version (for example `0.7.0`) and published under [Releases](https://github.com/Emikael/e6-agent-skills/releases). Restart the agent session after any update. Where a host has no update command, remove and reinstall.
+
+| Host | Update from the terminal |
+|---|---|
+| Claude Code | `claude plugin marketplace update e6-agent-skills` then `claude plugin update e6-agent-skills@e6-agent-skills` (in a session: `/plugin marketplace update e6-agent-skills`, `/plugin update e6-agent-skills@e6-agent-skills`) |
+| Claude Desktop / claude.ai apps | `git -C e6-agent-skills pull`, rebuild with `node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip`, re-upload each ZIP |
+| Codex | `codex plugin marketplace upgrade e6-agent-skills` then `codex plugin add e6-agent-skills@e6-agent-skills` |
+| Antigravity CLI | `agy plugin uninstall e6-agent-skills` then `agy plugin install https://github.com/Emikael/e6-agent-skills.git` (`agy plugin list` shows the installed name) |
+| Gemini CLI | `gemini skills list` to find the installed names, `gemini skills uninstall <name>` for each, then re-run `gemini skills install https://github.com/Emikael/e6-agent-skills.git --path skills` |
+| GitHub Copilot CLI | `copilot plugin marketplace add Emikael/e6-agent-skills` again, then `copilot plugin install e6-agent-skills@e6-agent-skills` |
+| Command Code | `cmd skills add Emikael/e6-agent-skills --force` (add `--global` if installed globally) |
+| Cursor, Grok Build, OpenCode, Copilot (VS Code), Kiro | `git -C e6-agent-skills pull`, then rebuild or recopy skills with `build-portable-skills.js --out <skills dir>` |
+| Windsurf, Other Agents | `git -C e6-agent-skills pull`, then refresh the pasted rule from `references/workflow-bootstrap.md` |
+
+Hosts that use the bootstrap block (Cursor, Grok Build, Codex, OpenCode, Gemini) also need `node e6-agent-skills/scripts/install-workflow-bootstrap.js --project <project> --pack ./e6-agent-skills --host <host> --check`; re-run it with `--write` when it reports a stale block.
 
 ---
 

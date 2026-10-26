@@ -1,0 +1,38 @@
+name: Release Tag
+
+# Tags main with the plugin.json version once CI is green, so users can pin a release.
+# Bump the version in the plugin manifests (see scripts/validate-versions.js) to cut one.
+on:
+  workflow_run:
+    workflows: ["Test Plugin Installation"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Tag the manifest version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          version=$(node -p "require('./plugin.json').version")
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "Tag $version already exists; nothing to do."
+            exit 0
+          fi
+          # claude plugin tag convention (name--vX.Y.Z) alongside the bare version tag
+          name=$(node -p "require('./plugin.json').name")
+          git tag "$version" "$SHA"
+          git tag "$name--v$version" "$SHA"
+          git push origin "refs/tags/$version" "refs/tags/$name--v$version"
+          gh release create "$version" --target "$SHA" --title "$version" --generate-notes
