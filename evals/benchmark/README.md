@@ -6,7 +6,7 @@ This benchmark answers one question with measured numbers: given the same model,
 |---|---|
 | `baseline` | Claude Code as shipped: built-in skills only, no skill pack |
 | `e6` | This repository as a plugin, snapshotted with `git archive` of its plugin paths at the run's commit |
-| `e6-prev` | The same, at the earlier commit `5e5a529` pinned in [`arms.json`](arms.json). Merge branches carrying it with a merge commit, not a squash, or that commit becomes unreachable and the arm cannot be built |
+| `e6-prev` | The same, at the earlier commit `5e5a529` pinned in [`arms.json`](arms.json). The tag `benchmark/e6-prev` keeps it reachable after a squash merge; without a ref on origin, CI cannot build the arm |
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers), pinned to a commit in [`arms.json`](arms.json) |
 
 The harness lives in [`scripts/run-benchmark.js`](../../scripts/run-benchmark.js) and [`scripts/lib/benchmark/`](../../scripts/lib/benchmark/). Published results: [docs/benchmark-results.md](../../docs/benchmark-results.md).
