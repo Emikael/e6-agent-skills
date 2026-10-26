@@ -144,3 +144,15 @@ test('builds the real pack with every link resolving inside each skill', t => {
   const contract = path.join(out, 'using-e6-agent-skills', 'references', 'workflow-contract.md');
   assert.ok(fs.existsSync(contract), 'coordinator carries the workflow contract');
 });
+
+test('inline-code paths to Markdown files count as broken links; commands do not', () => {
+  const { codeSpanPaths } = require('./build-portable-skills');
+  const text = [
+    'See `../../references/security-checklist.md#owasp` and `./notes.md`.',
+    'Run `./gradlew test` or `../bin/run`.',
+    '```',
+    'cat `../../references/inside-fence.md`',
+    '```',
+  ].join('\n');
+  assert.deepEqual(codeSpanPaths(text), ['../../references/security-checklist.md#owasp', './notes.md']);
+});

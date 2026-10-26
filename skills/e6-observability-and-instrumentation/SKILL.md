@@ -69,7 +69,7 @@ Use `e6-test-driven-development` for meaningful telemetry contracts. Drive deter
 
 For a browser feature, use `e6-browser-testing-with-devtools` to inspect client/server correlation and errors. With staging or collector access, diagnose a safe induced failure from telemetry alone; otherwise state the missing remote proof.
 
-Use `e6-code-review-and-quality`; fix findings and re-check signals. Load applicable sections of `../../references/observability-checklist.md` for deeper checks.
+Use `e6-code-review-and-quality`; fix findings and re-check signals. Load applicable sections of the [observability checklist](../../references/observability-checklist.md) for deeper checks.
 
 ## Workflow Handoff
 

@@ -149,10 +149,27 @@ function buildSkill(name, options) {
   return { name, outDir, vendored: [...vendored.keys()].map(file => path.basename(file)) };
 }
 
+// A relative path written as inline code (`../../references/x.md`) is neither vendored nor
+// rewritten, so it must be a Markdown link instead.
+const CODE_SPAN_PATH = /`((?:\.{1,2}\/)+[^`\s]*\.md(?:#[^`\s]*)?)`/g;
+
+function codeSpanPaths(text) {
+  let fenced = false;
+  const paths = [];
+  for (const line of text.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+    else if (!fenced) for (const match of line.matchAll(CODE_SPAN_PATH)) paths.push(match[1]);
+  }
+  return paths;
+}
+
 /** Every local link in a built skill must resolve inside that skill. */
 function brokenLinks(outDir) {
   const broken = [];
   for (const file of listFiles(outDir).filter(f => f.endsWith('.md'))) {
+    for (const target of codeSpanPaths(fs.readFileSync(file, 'utf8'))) {
+      broken.push(`${path.relative(outDir, file)} → \`${target}\` (inline-code path; write it as a Markdown link)`);
+    }
     mapLinks(fs.readFileSync(file, 'utf8'), target => {
       const [filePart] = splitTarget(target);
       if (isLocalTarget(filePart)) {
@@ -267,4 +284,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { mapLinks, writeZip, crc32 };
+module.exports = { mapLinks, writeZip, crc32, brokenLinks, codeSpanPaths };

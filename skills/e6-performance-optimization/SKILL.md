@@ -46,7 +46,7 @@ Repeat samples with a budget; record warmup/cache state, data, concurrency, envi
 
 Use profile evidence to pick the highest-impact bottleneck. Slow page load may be server waiting, critical resources, or bundle cost; sluggish interaction may be long tasks or render/layout work. Backend latency may be queries, pool waits, locks, CPU, GC, or external dependencies.
 
-Load only the matching section of [references/measured-patterns.md](references/measured-patterns.md): query batching/pagination, index plans/write cost, connection pools, image priority, render work, bundle splitting, or cache design. Use applicable sections of `../../references/performance-checklist.md` for deeper checks.
+Load only the matching section of [references/measured-patterns.md](references/measured-patterns.md): query batching/pagination, index plans/write cost, connection pools, image priority, render work, bundle splitting, or cache design. Use applicable sections of the [performance checklist](../../references/performance-checklist.md) for deeper checks.
 
 For indexes, compare representative reads and relevant write cost, not just plan shape. For caches, state complete keys (tenant/viewer/permissions/locale/flags), acceptable staleness, invalidation, capacity, and stampede protection. Do not cache a correctness obligation away. Public shared caching must never expose personalized data.
 
