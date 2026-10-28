@@ -11,10 +11,11 @@ OpenCode discovers skills from several locations. Agent Skills provides two opti
 
 ## Installation
 
-There are two ways to get the skills into your project:
+There are three ways to get the skills into your project:
 
 1. Install with the `skills` CLI (fastest).
 2. Clone this repository and copy the skill directories manually.
+3. On OpenCode 2, clone this repository and point the `skills` setting at it (no copying; recommended for the complete workflow).
 
 After either step, create your own project-local `AGENTS.md` and, if you want slash commands, write your own `.opencode/commands/*.md` wrappers (see [Optional slash commands](#optional-slash-commands)).
 
@@ -87,6 +88,18 @@ OpenCode also discovers skills placed in Claude-compatible or generic agent path
 
 If you already share skills across Claude Code and OpenCode, any of these locations work.
 
+### Option 3: Reference a clone from `opencode.json` (OpenCode 2)
+
+OpenCode 2 reads extra skill sources from a `skills` array in any `opencode.json` or `opencode.jsonc`. Point it at the `skills/` directory of a complete clone:
+
+```jsonc
+{
+  "skills": ["~/src/e6-agent-skills/skills"]
+}
+```
+
+Each entry is a directory that holds skills, not a single skill. Relative paths resolve from the directory OpenCode runs in, not from the config file, so prefer `~/` or absolute paths. Because the skills stay inside the complete pack, their links to the shared `references/` checklists keep working, and `git -C ~/src/e6-agent-skills pull` updates them in place. OpenCode 1 has no equivalent setting; use Option 1 or 2 there. See the [OpenCode 2 skills docs](https://opencode.ai/v2/docs/skills/).
+
 ### What to copy
 
 Copy the directories under `skills/` (for example `skills/e6-spec-driven-development/`). Each directory must contain a `SKILL.md` file. Do not copy the repository's root `AGENTS.md` or `CLAUDE.md`; those files configure development of this repository itself.
@@ -111,6 +124,8 @@ node /path/to/e6-agent-skills/scripts/install-workflow-bootstrap.js --project . 
 
 > **Note:** The root `AGENTS.md` inside the `Emikael/e6-agent-skills` repository is intended for contributors working on this repository and should not be copied into other projects. See [CONTRIBUTING.md](../CONTRIBUTING.md#repo-scoped-files).
 
+> **OpenCode 2:** only `AGENTS.md` is read; `CLAUDE.md` is not used as a fallback. The global file (`~/.config/opencode/AGENTS.md`) and every `AGENTS.md` from the workspace up to the project root are combined, not overridden, so keep the bootstrap block in one of them only.
+
 ## How It Works
 
 ### 1. Skill Discovery
@@ -123,8 +138,11 @@ OpenCode walks the following paths (project-local first, then global):
 - `~/.claude/skills/<name>/SKILL.md`
 - `.agents/skills/<name>/SKILL.md`
 - `~/.agents/skills/<name>/SKILL.md`
+- On OpenCode 2, any directory listed in the `skills` array of `opencode.json` (see [Option 3](#option-3-reference-a-clone-from-opencodejson-opencode-2))
 
-Each skill must contain a `SKILL.md` file with a valid `name` and `description` in its frontmatter.
+Each skill must contain a `SKILL.md` file with a valid `name` and `description` in its frontmatter. OpenCode 2 only advertises skills that have a `description`; every e6 skill does.
+
+To load a skill yourself on OpenCode 2, mention it in your prompt as `@<skill-id>`, for example `@using-e6-agent-skills`.
 
 ### 2. Automatic Skill Invocation
 
@@ -150,7 +168,7 @@ OpenCode does not require slash commands, but if you prefer them see the next se
 
 ### Optional slash commands
 
-This repository does not ship OpenCode command files; its `.opencode/` directory holds only a `skills` link used when working on this repository. If you prefer explicit commands, author thin wrappers in your project's `.opencode/commands/` directory. Current OpenCode docs use `.opencode/commands/`; some versions read `.opencode/command/` instead (verify on your version). The filename becomes the command name.
+This repository does not ship OpenCode command files; its `.opencode/` directory holds only a `skills` link used when working on this repository. If you prefer explicit commands, author thin wrappers in your project's `.opencode/commands/` directory. Use `.opencode/commands/` (or `~/.config/opencode/commands/` globally); OpenCode 2 still reads the legacy singular `.opencode/command/`, but new files belong in `commands/`. Only `.md` files are discovered, and `$ARGUMENTS` expands to the text after the command. The filename becomes the command name.
 
 Use the Claude Code commands in this repository's `.claude/commands/*.md` as a reference for each command's intent, but write the body for OpenCode rather than copying it verbatim. Those files are written for Claude Code, and a plugin-namespaced skill name such as `e6-agent-skills:<name>` does not resolve in OpenCode. A one-file wrapper also does not reproduce coordination such as `/build auto` or the specialist review passes in `/ship`.
 
@@ -226,7 +244,7 @@ These rules are enforced by your project's `AGENTS.md`, not by the copy of the s
 
 ## Summary
 
-1. Install the skills you need, either with `npx skills add Emikael/e6-agent-skills` or by copying them from a clone of this repository into `.opencode/skills/` (project), `~/.config/opencode/skills/` (global), or a cross-compatible path such as `.claude/skills/` / `.agents/skills/`.
+1. Install the skills you need, either with `npx skills add Emikael/e6-agent-skills` or by copying them from a clone of this repository into `.opencode/skills/` (project), `~/.config/opencode/skills/` (global), or a cross-compatible path such as `.claude/skills/` / `.agents/skills/`. On OpenCode 2, you can instead list the clone's `skills/` directory in the `skills` array of `opencode.json`.
 2. Create your own project-local `AGENTS.md` with the rules and intent mapping above.
 3. OpenCode discovers the skills and your `AGENTS.md` guides the agent to invoke them.
 4. Optionally write your own `.opencode/commands/*.md` wrappers for explicit slash commands.
