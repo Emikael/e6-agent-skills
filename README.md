@@ -118,7 +118,7 @@ npx skills add Emikael/e6-agent-skills --skill e6-test-driven-development   # be
 | Codex | Plugin | `AGENTS.md` via `--host codex` | No | No |
 | Gemini CLI | `gemini skills install` | `GEMINI.md` via `--host gemini` | Copy `.gemini/commands/` | No |
 | Antigravity CLI | Plugin | `AGENTS.md` via `--host codex` | Skills only ([known limitation](docs/antigravity-setup.md#lifecycle-workflows-and-command-compatibility)) | Yes |
-| OpenCode | Copy or `npx skills` | `AGENTS.md` via `--host opencode` | Write your own | No |
+| OpenCode | Copy or `npx skills`; on v2, `skills` in `opencode.json` | `AGENTS.md` via `--host opencode` | Write your own | No |
 | Grok Build | Portable skills | `AGENTS.md` via `--host grok` | No | No |
 | GitHub Copilot (VS Code) | `.github/skills/` | Paste into `.github/copilot-instructions.md` | No | Copy as `*.agent.md` |
 | GitHub Copilot CLI | Plugin | Paste into project instructions | No | Not documented |
@@ -280,7 +280,7 @@ Add a compact coordinator rule pointing to the complete pack. Load skill bodies 
 <details>
 <summary><b>OpenCode</b></summary>
 
-Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. No OpenCode command wrappers ship with the pack; you can author your own under `.opencode/commands/`.
+Copy skills to `.opencode/skills/` (or `~/.config/opencode/skills/`), add a project-local `AGENTS.md`, and use the built-in `skill` tool for agent-driven execution. On OpenCode 2, you can skip copying: list a clone's `skills/` directory in the `skills` array of `opencode.json`, which keeps the shared references intact. No OpenCode command wrappers ship with the pack; you can author your own under `.opencode/commands/`.
 
 See [docs/opencode-setup.md](docs/opencode-setup.md).
 
