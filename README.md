@@ -36,7 +36,7 @@ Read the [usage guide](docs/usage-guide.md). For a worked, copy-ready prompt on 
 
 ## Commands
 
-Nine lifecycle command wrappers are provided for Claude Code and Gemini CLI. Other hosts expose the underlying skills or need their own aliases; Antigravity wrapper availability depends on its version. The table shows short names; Claude plugin commands use a namespace such as `/e6-agent-skills:build`. Gemini names its planning wrapper `/planning`. See the setup guides below.
+Nine lifecycle command wrappers are provided for Claude Code and Gemini CLI. The Claude plugin installs them; on Gemini CLI, `gemini skills install` installs skills only, so copy `.gemini/commands/*.toml` into your project's `.gemini/commands/` or `~/.gemini/commands/` ([Gemini setup](docs/gemini-cli-setup.md#slash-commands)). Other hosts expose the underlying skills or need their own aliases; Antigravity wrapper availability depends on its version. The table shows short names; Claude plugin commands use a namespace such as `/e6-agent-skills:build`. Gemini names its planning wrapper `/planning`. See the setup guides below.
 
 | What you're doing | Command | Key principle |
 |-------------------|---------|---------------|
@@ -65,7 +65,8 @@ The Claude plugin registers a compact startup bootstrap. Other hosts can use the
 ```bash
 git clone https://github.com/Emikael/e6-agent-skills.git e6-agent-skills
 
-# Preview project wiring; use codex, opencode, gemini, or claude for --host.
+# Preview project wiring; --host is codex, opencode, gemini, claude, cursor, or grok.
+# Antigravity uses --host codex (both write AGENTS.md).
 node e6-agent-skills/scripts/install-workflow-bootstrap.js \
   --project /path/to/project --pack ./e6-agent-skills --host codex
 
@@ -107,6 +108,23 @@ npx skills add Emikael/e6-agent-skills --skill e6-test-driven-development   # be
 > not repair those links. See [activation](docs/workflow-activation.md) and the
 > [portability notes](docs/skill-anatomy.md).
 
+**What each host gets.** Every route installs the skills. The rest depends on the host:
+
+| Host | Install route | Coordinator bootstrap | Lifecycle commands | Personas |
+|---|---|---|---|---|
+| Claude Code | Plugin | Automatic (SessionStart hook) | Yes, `/e6-agent-skills:<name>` | Yes |
+| Claude apps (claude.ai, Desktop chat, Cowork) | ZIP per skill | Paste into Project instructions | No | No |
+| Cursor | Local plugin, or portable skills | Plugin: `sessionStart` hook; skills: rule via `--host cursor` | No | No |
+| Codex | Plugin | `AGENTS.md` via `--host codex` | No | No |
+| Gemini CLI | `gemini skills install` | `GEMINI.md` via `--host gemini` | Copy `.gemini/commands/` | No |
+| Antigravity CLI | Plugin | `AGENTS.md` via `--host codex` | Skills only ([known limitation](docs/antigravity-setup.md#lifecycle-workflows-and-command-compatibility)) | Yes |
+| OpenCode | Copy or `npx skills` | `AGENTS.md` via `--host opencode` | Write your own | No |
+| Grok Build | Portable skills | `AGENTS.md` via `--host grok` | No | No |
+| GitHub Copilot (VS Code) | `.github/skills/` | Paste into `.github/copilot-instructions.md` | No | Copy as `*.agent.md` |
+| GitHub Copilot CLI | Plugin | Paste into project instructions | No | Not documented |
+| Command Code | `cmd skills add` | Paste into project instructions | Skills appear as `/<skill>` | No |
+| Windsurf, Kiro, other agents | Clone or copy skills | Paste [`workflow-bootstrap.md`](references/workflow-bootstrap.md) into the host's rules (no installer host) | No | No |
+
 Prefer a native integration? Pick your tool below.
 
 <details>
@@ -121,13 +139,13 @@ Prefer a native integration? Pick your tool below.
 
 Enable the plugin and start a new session to load its compact SessionStart bootstrap.
 
-> **SSH errors?** The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or use the full HTTPS URL to force HTTPS cloning during the marketplace-add step:
+> **SSH errors?** For `owner/repo` sources, Claude Code clones over SSH when your key authenticates to GitHub and over HTTPS otherwise. To always use HTTPS, set `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`, or add the marketplace by its HTTPS URL:
 > ```bash
 > /plugin marketplace add https://github.com/Emikael/e6-agent-skills.git
 > /plugin install e6-agent-skills@e6-agent-skills
 > ```
 >
-> If `/plugin install` still fails with `git@github.com: Permission denied (publickey)` on Windows or macOS, the recommended workaround is to configure Git once to rewrite GitHub SSH URLs to HTTPS for subprocess clones:
+> If `/plugin install` still fails with `git@github.com: Permission denied (publickey)`, configure Git once to rewrite GitHub SSH URLs to HTTPS:
 > ```bash
 > git config --global url."https://github.com/".insteadOf git@github.com:
 > ```
@@ -142,6 +160,19 @@ Enable the plugin and start a new session to load its compact SessionStart boots
 From a terminal: `claude plugin marketplace update e6-agent-skills && claude plugin update e6-agent-skills@e6-agent-skills`.
 
 Restart the session afterwards. Claude Code only offers an update when the manifest `version` changes. If the update does not apply, run `/plugin uninstall e6-agent-skills@e6-agent-skills` and install again. Each version is tagged (for example `0.7.0`) and published under [Releases](https://github.com/Emikael/e6-agent-skills/releases).
+
+**Automatic updates:** third-party marketplaces don't auto-update by default. Turn it on in `/plugin` → **Marketplaces** → `e6-agent-skills` → **Enable auto-update**, or set `autoUpdate` on the marketplace entry in `~/.claude/settings.json`:
+
+```json
+"extraKnownMarketplaces": {
+  "e6-agent-skills": {
+    "source": { "source": "github", "repo": "Emikael/e6-agent-skills" },
+    "autoUpdate": true
+  }
+}
+```
+
+Claude Code then installs new releases in the background during a session; run `/reload-plugins` or start a new session to load them.
 
 **Local / development:**
 
@@ -230,6 +261,13 @@ gemini skills install https://github.com/Emikael/e6-agent-skills.git --path skil
 gemini skills install ./e6-agent-skills/skills/
 ```
 
+**Lifecycle commands** (not installed by `gemini skills install`):
+
+```bash
+mkdir -p .gemini/commands
+cp ./e6-agent-skills/.gemini/commands/*.toml .gemini/commands/   # or ~/.gemini/commands/ for every project
+```
+
 </details>
 
 <details>
@@ -306,11 +344,11 @@ Releases are tagged by version (for example `0.7.0`) and published under [Releas
 
 | Host | Update from the terminal |
 |---|---|
-| Claude Code | `claude plugin marketplace update e6-agent-skills` then `claude plugin update e6-agent-skills@e6-agent-skills` (in a session: `/plugin marketplace update e6-agent-skills`, `/plugin update e6-agent-skills@e6-agent-skills`) |
+| Claude Code | `claude plugin marketplace update e6-agent-skills` then `claude plugin update e6-agent-skills@e6-agent-skills` (in a session: `/plugin marketplace update e6-agent-skills`, `/plugin update e6-agent-skills@e6-agent-skills`), or [turn on auto-update](#quick-start) |
 | Claude Desktop / claude.ai apps | `git -C e6-agent-skills pull`, rebuild with `node e6-agent-skills/scripts/build-portable-skills.js --out dist/claude-skills --zip`, re-upload each ZIP |
 | Codex | `codex plugin marketplace upgrade e6-agent-skills` then `codex plugin add e6-agent-skills@e6-agent-skills` |
 | Antigravity CLI | `agy plugin uninstall e6-agent-skills` then `agy plugin install https://github.com/Emikael/e6-agent-skills.git` (`agy plugin list` shows the installed name) |
-| Gemini CLI | `gemini skills list` to find the installed names, `gemini skills uninstall <name>` for each, then re-run `gemini skills install https://github.com/Emikael/e6-agent-skills.git --path skills` |
+| Gemini CLI | `gemini skills list` to find the installed names, `gemini skills uninstall <name>` for each, then re-run `gemini skills install https://github.com/Emikael/e6-agent-skills.git --path skills`; re-copy `.gemini/commands/*.toml` if you use the commands |
 | GitHub Copilot CLI | `copilot plugin marketplace add Emikael/e6-agent-skills` again, then `copilot plugin install e6-agent-skills@e6-agent-skills` |
 | Command Code | `cmd skills add Emikael/e6-agent-skills --force` (add `--global` if installed globally) |
 | Cursor, Grok Build, OpenCode, Copilot (VS Code), Kiro | `git -C e6-agent-skills pull`, then rebuild or recopy skills with `build-portable-skills.js --out <skills dir>` |
