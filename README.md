@@ -139,6 +139,8 @@ Prefer a native integration? Pick your tool below.
 
 Enable the plugin and start a new session to load its compact SessionStart bootstrap.
 
+**What the plugin runs:** one `SessionStart` hook (`hooks/hooks.json` → `hooks/session-start.sh`, Bash). It prints `references/workflow-bootstrap.md` and the path to the `using-e6-agent-skills` router as session context. It makes no network requests, writes no files, and reads no credentials; its only environment check is whether `CURSOR_PLUGIN_ROOT` is set, to choose the output format. The plugin ships no MCP servers, `bin/` executables, or package installs. The `scripts/` directory holds developer and CI tools that the hook does not run.
+
 > **SSH errors?** For `owner/repo` sources, Claude Code clones over SSH when your key authenticates to GitHub and over HTTPS otherwise. To always use HTTPS, set `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`, or add the marketplace by its HTTPS URL:
 > ```bash
 > /plugin marketplace add https://github.com/Emikael/e6-agent-skills.git
