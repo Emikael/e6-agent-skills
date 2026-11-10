@@ -136,6 +136,26 @@ jobs:
       - name: Run skill evals (trigger + routing)
         run: node scripts/run-evals.js --min-rank1 95
 
+      # The floor-guard reference shells out to POSIX git (diff against
+      # /dev/null); run it on macOS only until it is verified on Windows.
+      - name: Test floor-guard reference (macOS)
+        if: runner.os == 'macOS'
+        run: node --test scripts/floor-guard-reference-test.js
+
+      # The hooks support the Bash 3.2 that macOS ships; Ubuntu runs them in
+      # test-hooks below.
+      - name: Test session-start hook payload (macOS)
+        if: runner.os == 'macOS'
+        run: bash hooks/session-start-test.sh
+
+      - name: Test sdd-cache hooks (macOS)
+        if: runner.os == 'macOS'
+        run: bash hooks/sdd-cache-test.sh
+
+      - name: Test simplify-ignore hook (macOS)
+        if: runner.os == 'macOS'
+        run: bash hooks/simplify-ignore-test.sh
+
   test-hooks:
     name: Hook regression tests
     runs-on: ubuntu-latest

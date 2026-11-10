@@ -3,6 +3,10 @@
 "use strict";
 
 const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+
+// Resolve manifests from the repo root, not the caller's working directory.
+const ROOT = join(__dirname, "..");
 
 const CANONICAL_REPO = "Emikael/e6-agent-skills";
 const CANONICAL_URL = `https://github.com/${CANONICAL_REPO}`;
@@ -17,7 +21,7 @@ const manifestPaths = [
 ];
 
 function readManifest(manifestPath) {
-  return JSON.parse(readFileSync(manifestPath, "utf8"));
+  return JSON.parse(readFileSync(join(ROOT, manifestPath), "utf8"));
 }
 
 function readManifestVersion(manifestPath) {
@@ -49,20 +53,25 @@ function assertCanonicalGithub(manifestPath) {
   }
 }
 
-const expectedVersion = readManifestVersion("plugin.json");
-if (!expectedVersion) {
-  throw new Error("plugin.json is missing a version field");
-}
-
-for (const manifestPath of manifestPaths) {
-  const version = readManifestVersion(manifestPath);
-  if (version !== expectedVersion) {
-    throw new Error(
-      `${manifestPath} has version ${version ?? "<missing>"}; expected ${expectedVersion}`,
-    );
+try {
+  const expectedVersion = readManifestVersion("plugin.json");
+  if (!expectedVersion) {
+    throw new Error("plugin.json is missing a version field");
   }
-  assertCanonicalGithub(manifestPath);
-}
 
-console.log(`All plugin manifests use version ${expectedVersion}.`);
-console.log(`GitHub clone and marketplace sources point at ${CANONICAL_REPO}.`);
+  for (const manifestPath of manifestPaths) {
+    const version = readManifestVersion(manifestPath);
+    if (version !== expectedVersion) {
+      throw new Error(
+        `${manifestPath} has version ${version ?? "<missing>"}; expected ${expectedVersion}`,
+      );
+    }
+    assertCanonicalGithub(manifestPath);
+  }
+
+  console.log(`All plugin manifests use version ${expectedVersion}.`);
+  console.log(`GitHub clone and marketplace sources point at ${CANONICAL_REPO}.`);
+} catch (error) {
+  console.error(`validate-versions: ${error.message}`);
+  process.exit(1);
+}
