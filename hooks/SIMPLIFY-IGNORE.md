@@ -44,7 +44,7 @@ result[3] = buf[3] ^ key[3];
 
 3. Run `/code-simplify` — protected blocks become `/* BLOCK_de115a1d: perf-critical */` placeholders. The model reasons about surrounding code without seeing the protected implementation.
 
-> **Note:** The hook stores temporary backups in `.claude/.simplify-ignore-cache/`. Make sure this path is in your `.gitignore`.
+> **Note:** The hook stores temporary backups outside the project, in `${XDG_STATE_HOME:-~/.local/state}/e6-agent-skills/simplify-ignore/<id>/`, where `<id>` is the first 16 hex characters of the SHA-1 of the resolved project directory. Set `SIMPLIFY_IGNORE_CACHE_DIR` to use another directory. Nothing needs to go in `.gitignore`.
 
 ## How it works
 
@@ -57,6 +57,8 @@ One script, three hook events:
 | `Stop` | Expands the placeholders left in each file on disk, so changes made outside `Edit`/`Write` survive; falls back to the backup only if no placeholder is left |
 
 Each block is content-hashed (8 hex chars via `shasum`/`sha1sum`) so the round-trip is unambiguous even if the model duplicates or reorders placeholders. Cache is project-scoped to prevent cross-session interference.
+
+The hook only touches regular files inside the project directory. It skips files outside it and symlinks, and at `Stop` it refuses any cache entry whose path is outside the project or no longer matches the entry, leaving that backup in the cache with a warning. Earlier versions kept the cache in `.claude/.simplify-ignore-cache/` inside the project, where a repo could ship planted entries that `Stop` would write anywhere you can write. The hook no longer reads that directory; if it exists, `Stop` prints its path so you can check it and delete it.
 
 ## Annotation syntax
 
@@ -73,17 +75,17 @@ Any comment style works (`//`, `/*`, `#`, `<!--`). Multiple blocks per file and 
 If Claude Code crashes without triggering the Stop hook, files on disk may still have `BLOCK_<hash>` placeholders. To restore manually:
 
 ```bash
-echo '{}' | bash hooks/simplify-ignore.sh
+echo '{}' | CLAUDE_PROJECT_DIR="$PWD" bash hooks/simplify-ignore.sh
 ```
 
-Backups are stored in `.claude/.simplify-ignore-cache/` within your project directory.
+Run it from the project root. Backups are stored in the per-user cache described above.
 
 ## Known limitations
 
 - **Single-line blocks hide the entire line.** If `simplify-ignore-start` and `simplify-ignore-end` appear on the same line as other code, the whole line is hidden from the model, not just the annotated portion. Use dedicated lines for annotations.
 - **Comment suffix detection covers `*/` and `-->` only.** Template engines with non-standard comment closers (ERB `%>`, Blade `--}}`) may produce unbalanced placeholders. Use `#` or `//` style comments instead.
 - **Fallback expansion is progressive, not exact.** If the model alters a placeholder's formatting (e.g. changes the reason text), the hook tries progressively simpler matches: full placeholder → prefix+hash+suffix → hash-only. The hash-only fallback may leave cosmetic debris (e.g. stray `:` or reason text). A warning is printed to stderr when this happens.
-- **A wholesale rewrite falls back to the backup.** If something replaces a filtered file's entire contents and removes every `BLOCK_<hash>` placeholder, the hook can no longer tell where the protected block belongs. At `Stop` it restores the backup and prints a warning; the rewrite is not lost but is kept in the cache as `.claude/.simplify-ignore-cache/<id>.recovered`, whose path the warning prints, and you merge it back by hand. Changes that leave the placeholders in place — a `Bash` edit, a formatter, an external editor — are kept in the file itself.
+- **A wholesale rewrite falls back to the backup.** If something replaces a filtered file's entire contents and removes every `BLOCK_<hash>` placeholder, the hook can no longer tell where the protected block belongs. At `Stop` it restores the backup and prints a warning; the rewrite is not lost but is kept in the cache as `<id>.recovered`, whose path the warning prints, and you merge it back by hand. Changes that leave the placeholders in place — a `Bash` edit, a formatter, an external editor — are kept in the file itself.
 - **File renaming leaves placeholders.** If the model renames or moves a file via a shell command, the new file will retain `BLOCK_<hash>` placeholders. The original code is saved as `<old-filename>.recovered` when the session stops. You must manually restore the recovered code into the new file.
 
 ## Requirements

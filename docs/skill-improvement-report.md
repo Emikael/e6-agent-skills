@@ -1,5 +1,7 @@
 # Skill Improvement Report: Second Pass
 
+> Historical snapshot: counts and file names describe the pack at the baseline below, not today. See the [README](../README.md) for the current catalog.
+
 Date: 2026-10-23. Baseline: `f1102c9` (after the first SDLC pass, see [sdlc-workflow-report.md](sdlc-workflow-report.md)). Scope: all 26 skills, the shared references, 4 personas, 9 commands in three host formats, host activation, setup docs, and evals.
 
 ## Summary

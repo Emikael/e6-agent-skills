@@ -46,7 +46,7 @@ This hook caches fetched content on disk, but **revalidates with the origin serv
 
    `${CLAUDE_PROJECT_DIR}` resolves to the directory you launched Claude Code from. The snippet above works when the hooks live inside the same project. If you installed `e6-agent-skills` elsewhere (e.g. as a shared plugin under `~/e6-agent-skills`), replace `${CLAUDE_PROJECT_DIR}/hooks/...` with the absolute path to each script.
 
-2. Make sure `.claude/sdd-cache/` is in your `.gitignore` (already included in this repo).
+2. Nothing to add to `.gitignore`: the cache lives outside the project (see [Where the cache lives](#where-the-cache-lives)).
 
 3. Use `/e6-source-driven-development` (or the skill) as usual. No changes to the skill or the agent's workflow — the cache is transparent.
 
@@ -56,9 +56,25 @@ HTTP resource cache keyed by URL. Freshness is delegated to the origin via `ETag
 
 The stored body is not raw HTML — `WebFetch` post-processes each response through a model using the caller's prompt, so what we cache is one agent's reading of the page. The key stays URL-only so reads reuse across sessions; the original prompt is kept as metadata and surfaced in the hit message so the next agent can tell whether the earlier reading fits.
 
+## Where the cache lives
+
+Per user, one directory per project, never inside the project:
+
+```
+${XDG_CACHE_HOME:-~/.cache}/e6-agent-skills/sdd-cache/<sha256 of the resolved project dir, 32 hex>/
+```
+
+Set `SDD_CACHE_DIR` to use another directory. The commands below assume this shell variable, run from the project root:
+
+```bash
+CACHE="${SDD_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/e6-agent-skills/sdd-cache/$(printf '%s' "$(pwd -P)" | shasum -a 256 | cut -c1-32)}"
+```
+
+Earlier versions kept the cache in `.claude/sdd-cache/` inside the project. A repo can ship that directory, and a planted entry carrying the page's real ETag would be served as if the origin had confirmed it, so the hooks no longer read it; delete it. The pre hook also refuses an entry whose stored `url` differs from the request, and both hooks pass only `http://` and `https://` URLs to `curl`, which is limited to those protocols on redirects too.
+
 ## How it works
 
-One cache entry per URL, stored as JSON in `.claude/sdd-cache/<sha>.json`:
+One cache entry per URL, stored as JSON in `$CACHE/<sha>.json`:
 
 | Event | Action |
 |---|---|
@@ -93,8 +109,8 @@ echo '{
 }' | bash hooks/sdd-cache-post.sh
 
 # Inspect the stored entry
-ls .claude/sdd-cache/
-cat .claude/sdd-cache/*.json | jq .
+ls "$CACHE"
+cat "$CACHE"/*.json | jq .
 
 # Simulate the next PreToolUse on the same URL + prompt
 echo '{
@@ -108,7 +124,7 @@ echo "exit=$?"
 
 Expected:
 
-- First command creates one file under `.claude/sdd-cache/` (only if the server returned an `ETag` or `Last-Modified`).
+- First command creates one file under `$CACHE` (only if the server returned an `ETag` or `Last-Modified`).
 - Second command exits `2` with the cached content on stderr when the origin replies `304`, or exits `0` silently otherwise.
 
 ### 2. End-to-end in a real session
@@ -116,7 +132,7 @@ Expected:
 1. Register the hooks in `.claude/settings.local.json` as shown above.
 2. Start a Claude Code session in this repo.
 3. Ask the agent to fetch a documentation page (e.g. "fetch `https://react.dev/reference/react/useActionState` and summarize").
-4. Verify a file appears under `.claude/sdd-cache/`.
+4. Verify a file appears under `$CACHE`.
 5. Ask the agent to fetch the same page with the same prompt again.
 6. Verify the second `WebFetch` is blocked and the cached content is returned (visible in the session transcript as a tool error with `[sdd-cache]` prefix).
 
@@ -126,7 +142,7 @@ To confirm the cache invalidates when docs change, force an `ETag` mismatch. Pic
 
 ```bash
 # Pick the entry you want to corrupt (swap in the actual filename)
-ENTRY=.claude/sdd-cache/e49c9f378670cfbb1d7d871b6dee16d9.json
+ENTRY="$CACHE/e49c9f378670cfbb1d7d871b6dee16d9.json"
 
 # Patch its ETag to something the origin will not recognize
 jq '.etag = "W/\"stale-etag-forced\""' "$ENTRY" > "$ENTRY.tmp" && mv "$ENTRY.tmp" "$ENTRY"
@@ -138,22 +154,22 @@ echo "exit=$?"   # expect 0 (fetch allowed through)
 
 ### 4. Debugging
 
-Both hooks write timestamped events to `.claude/sdd-cache/.debug.log` when debug mode is on. Enable it with either:
+Both hooks write timestamped events to `$CACHE/.debug.log` when debug mode is on. Enable it with either:
 
 ```bash
 # Option A: env var (per-session)
 SDD_CACHE_DEBUG=1 claude
 
 # Option B: sentinel file (persistent)
-mkdir -p .claude/sdd-cache && touch .claude/sdd-cache/.debug
-# …disable with: rm .claude/sdd-cache/.debug
+mkdir -p "$CACHE" && touch "$CACHE/.debug"
+# …disable with: rm "$CACHE/.debug"
 ```
 
 The log captures URL, detected `tool_response` shape, HEAD status, and why each invocation hit or missed. Useful when a cache miss looks unexpected (typically: the origin stopped emitting validators).
 
 ## Known limitations
 
-- **Body is prompt-shaped.** A hit returns the earlier agent's reading of the page, with the original prompt surfaced so the current agent can decide whether it applies. If it doesn't, delete the file under `.claude/sdd-cache/` to force a re-fetch.
+- **Body is prompt-shaped.** A hit returns the earlier agent's reading of the page, with the original prompt surfaced so the current agent can decide whether it applies. If it doesn't, delete the file under `$CACHE` to force a re-fetch.
 - **Every cache write costs an extra HEAD.** Claude Code doesn't expose the response headers that `WebFetch` already received, so the post hook re-queries the origin to capture `ETag` / `Last-Modified`. One extra roundtrip per miss — the price of keeping this a pure hook with no core changes.
 - **Servers without `ETag` or `Last-Modified` are never cached.** Most official doc sites (react.dev, docs.djangoproject.com, developer.mozilla.org) emit validators. Sites that don't are always re-fetched.
 - **A misbehaving server can serve a wrong `304`.** That's a server bug to diagnose, not a cache invariant to defend against; we don't paper over it with a TTL. Delete the entry if you spot a stale one.

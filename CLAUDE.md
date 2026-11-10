@@ -10,7 +10,7 @@ This is the e6-agent-skills project — a collection of production-grade enginee
 skills/       → Core skills (SKILL.md per directory)
 agents/       → Specialist personas (tech-lead, product-owner, ui-ux-designer, backend-engineer, frontend-engineer, qa-engineer, security-auditor, sre-engineer, code-reviewer, web-performance-auditor)
 hooks/        → Session lifecycle hooks
-.claude/commands/ → Slash commands (/spec, /plan, /build, /test, /review, /code-simplify, /ship; plus /webperf specialist audit)
+.claude/commands/ → Slash commands (/spec, /plan, /build, /test, /review, /code-simplify, /ship, /constraints; plus /webperf specialist audit)
 references/   → Supplementary checklists (testing, performance, security, accessibility, observability)
 evals/        → Skill eval cases + framework (see evals/README.md)
 docs/         → Setup guides for different tools
@@ -22,12 +22,13 @@ Use `using-e6-agent-skills` as coordinator for authorized engineering work and `
 
 ## Skills by Phase
 
-**Define:** e6-interview-me, e6-idea-refine, e6-spec-driven-development
+**Coordinate:** using-e6-agent-skills, e6-caveman
+**Understand:** e6-interview-me, e6-idea-refine, e6-spec-driven-development, e6-constraint-driven-development
 **Plan:** e6-planning-and-task-breakdown
 **Build:** e6-incremental-implementation, e6-test-driven-development, e6-context-engineering, e6-source-driven-development, e6-doubt-driven-development, e6-frontend-ui-engineering, e6-api-and-interface-design
 **Verify:** e6-browser-testing-with-devtools, e6-debugging-and-error-recovery
 **Review:** e6-code-review-and-quality, e6-code-simplification, e6-security-and-hardening, e6-performance-optimization
-**Ship:** e6-git-workflow-and-versioning, e6-ci-cd-and-automation, e6-deprecation-and-migration, e6-documentation-and-adrs, e6-observability-and-instrumentation, e6-shipping-and-launch
+**Handoff and Release:** e6-git-workflow-and-versioning, e6-ci-cd-and-automation, e6-deprecation-and-migration, e6-documentation-and-adrs, e6-observability-and-instrumentation, e6-shipping-and-launch
 
 ## Conventions
 

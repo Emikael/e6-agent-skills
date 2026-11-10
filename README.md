@@ -519,7 +519,7 @@ node scripts/validate-commands.js
 node scripts/run-evals.js --min-rank1 95
 ```
 
-There are 70 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
+There are 71 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
 
 ---
 

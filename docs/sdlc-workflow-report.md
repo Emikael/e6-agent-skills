@@ -1,5 +1,7 @@
 # SDLC Workflow Change Report
 
+> Historical snapshot: counts and file names describe the pack at the baseline below, not today. See the [README](../README.md) for the current catalog.
+
 Date: 2026-10-01. Baseline: `9c66e42`. Scope: all 25 original skills, host activation, commands, shared references, personas, fixtures, and evaluation tooling. Added `e6-caveman`; the pack now has 26 skills.
 
 ## Findings
