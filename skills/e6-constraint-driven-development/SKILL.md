@@ -1,6 +1,6 @@
 ---
 name: e6-constraint-driven-development
-description: Use when a project has no written quality standards, when setting up constraints or quality gates for coverage, security, accessibility, performance, or architecture, or when choosing enforcement thresholds. Use when agents add @ts-ignore, silence checks, skip tests, weaken assertions, or lower budgets to get green, or when agent-written code exceeds review capacity.
+description: Use when a project has no written quality standards, when defining constraints or choosing quality-gate thresholds for coverage, security, accessibility, performance, or architecture, or when choosing enforcement thresholds. Use when agents add @ts-ignore, silence checks, skip tests, weaken assertions, or lower budgets to get green, or when agent-written code exceeds review capacity.
 ---
 
 # Constraint-Driven Development

@@ -13,7 +13,7 @@ Find enough evidence to act correctly. Keep requirements and current failures; r
 
 Before implementation, at task changes, before delegation, when writing or updating an agent rules file, and when the agent invents APIs, repeats searches, or loses requirements.
 
-**Not for:** choosing a skill or workflow → `using-e6-agent-skills`; writing requirements → `e6-spec-driven-development`; ordering tasks → `e6-planning-and-task-breakdown`.
+**Not for:** choosing a skill or workflow → `using-e6-agent-skills`; writing requirements → `e6-spec-driven-development`; ordering tasks → `e6-planning-and-task-breakdown`; keeping an existing rules file accurate after conventions, commands, or boundaries change → `e6-documentation-and-adrs`.
 
 ## Process
 

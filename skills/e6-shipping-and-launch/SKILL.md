@@ -1,6 +1,6 @@
 ---
 name: e6-shipping-and-launch
-description: Use when preparing a production deployment or launch, running a pre-launch checklist, deciding what must be in place before shipping, producing a go/no-go assessment, setting up monitoring and alert readiness, planning staged rollout, opening a beta, or preparing and verifying a rollback strategy.
+description: Use when preparing a production deployment or launch, running a pre-launch checklist, deciding what must be in place before shipping, producing a go/no-go assessment, confirming monitoring and alerts are ready for launch, planning staged rollout, opening a beta, or preparing and verifying a rollback strategy.
 ---
 
 # Shipping and Launch

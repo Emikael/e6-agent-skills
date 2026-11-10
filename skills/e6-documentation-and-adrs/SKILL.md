@@ -15,7 +15,7 @@ Document current behavior and the evidence behind decisions. Useful docs explain
 - Updating setup instructions, public API docs, or docs that a change made inaccurate.
 - Updating agent-instruction files (`AGENTS.md`, `CLAUDE.md`, rule directories) when conventions change; they are documentation too.
 
-**Not for:** comments that repeat obvious code, or docs for throwaway prototypes; designing the API contract itself → `e6-api-and-interface-design`; changelog entries and version bumps → `e6-git-workflow-and-versioning`.
+**Not for:** comments that repeat obvious code, or docs for throwaway prototypes; designing the API contract itself → `e6-api-and-interface-design`; changelog entries and version bumps → `e6-git-workflow-and-versioning`; creating a rules file or deciding what context it loads → `e6-context-engineering`.
 
 ## Process
 

@@ -1,6 +1,6 @@
 ---
 name: e6-code-review-and-quality
-description: Use when reviewing a diff or pull request before merge, reviewing code written by yourself, another agent, or a human, or assessing code quality across correctness, readability, architecture, security, and performance.
+description: Use when reviewing a diff or pull request before merge, even when the diff is pasted inline, reviewing code written by yourself, another agent, or a human, or assessing code quality across correctness, readability, architecture, security, and performance.
 ---
 
 # Code Review and Quality
