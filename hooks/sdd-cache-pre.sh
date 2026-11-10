@@ -24,21 +24,7 @@ command -v shasum >/dev/null 2>&1 || command -v sha256sum >/dev/null 2>&1 || exi
 
 if [ -t 0 ]; then INPUT="{}"; else INPUT=$(cat); fi
 
-# Debug logging: active when SDD_CACHE_DEBUG=1 is set, or when a sentinel
-# file exists at .claude/sdd-cache/.debug. Toggle with `touch` / `rm`.
-dbg() {
-  local dir="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/sdd-cache"
-  [ "${SDD_CACHE_DEBUG:-0}" = "1" ] || [ -f "$dir/.debug" ] || return 0
-  mkdir -p "$dir"
-  printf '%s [pre]  %s\n' "$(date -u +%FT%TZ)" "$*" >> "$dir/.debug.log"
-}
-dbg "fired"
-
-URL=$(printf '%s' "$INPUT" | jq -r '.tool_input.url // empty' 2>/dev/null || true)
-if [ -z "$URL" ]; then dbg "no url in tool_input, exit"; exit 0; fi
-dbg "url=$URL"
-
-# Cache key is sha256(URL), truncated to 128 bits.
+# Cache key is sha256 of its input, truncated to 128 bits.
 hash_key() {
   if command -v shasum >/dev/null 2>&1; then
     printf '%s' "$1" | shasum -a 256 | cut -c1-32
@@ -47,11 +33,39 @@ hash_key() {
   fi
 }
 
-CACHE_DIR="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/sdd-cache"
+# The cache lives in per-user storage, one directory per project, never inside
+# the project: a repo could ship planted entries there. SDD_CACHE_DIR
+# overrides the location (tests use it).
+PROJECT_DIR=$(cd "${CLAUDE_PROJECT_DIR:-$PWD}" 2>/dev/null && pwd -P) || PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+CACHE_DIR="${SDD_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/e6-agent-skills/sdd-cache/$(hash_key "$PROJECT_DIR")}"
+
+# Debug logging: active when SDD_CACHE_DEBUG=1 is set, or when a sentinel
+# file exists at $CACHE_DIR/.debug. Toggle with `touch` / `rm`.
+dbg() {
+  [ "${SDD_CACHE_DEBUG:-0}" = "1" ] || [ -f "$CACHE_DIR/.debug" ] || return 0
+  (umask 077; mkdir -p "$CACHE_DIR")
+  printf '%s [pre]  %s\n' "$(date -u +%FT%TZ)" "$*" >> "$CACHE_DIR/.debug.log"
+}
+dbg "fired"
+
+URL=$(printf '%s' "$INPUT" | jq -r '.tool_input.url // empty' 2>/dev/null || true)
+if [ -z "$URL" ]; then dbg "no url in tool_input, exit"; exit 0; fi
+dbg "url=$URL"
+# Only plain web URLs: never let curl read file:// or other schemes, and never
+# let a URL that starts with "-" be read as a curl option.
+case "$URL" in
+  http://*|https://*) ;;
+  *) dbg "not an http(s) url, exit"; exit 0 ;;
+esac
+
 CACHE_FILE="$CACHE_DIR/$(hash_key "$URL").json"
 
 if [ ! -f "$CACHE_FILE" ]; then dbg "no cache file at $CACHE_FILE, exit"; exit 0; fi
 dbg "cache file exists: $CACHE_FILE"
+
+# The entry must be for this exact URL; serve nothing on a mismatch.
+CACHED_URL=$(jq -r '.url // empty' "$CACHE_FILE" 2>/dev/null || true)
+if [ "$CACHED_URL" != "$URL" ]; then dbg "cached url does not match request, bypass"; exit 0; fi
 
 FETCHED_AT=$(jq -r '.fetched_at // 0' "$CACHE_FILE" 2>/dev/null || echo 0)
 ORIGINAL_PROMPT=$(jq -r '.prompt // empty' "$CACHE_FILE" 2>/dev/null || true)
@@ -69,7 +83,7 @@ HEADERS=()
 [ -n "$LAST_MOD" ] && HEADERS+=(-H "If-Modified-Since: $LAST_MOD")
 
 STATUS=$(curl -sI -o /dev/null -w "%{http_code}" \
-  --max-time 5 -L \
+  --max-time 5 -L --proto '=http,https' --proto-redir '=http,https' \
   "${HEADERS[@]}" \
   "$URL" 2>/dev/null || echo "000")
 dbg "revalidation HEAD status=$STATUS"

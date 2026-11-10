@@ -13,6 +13,9 @@
 
 set -euo pipefail
 
+# Run from the repo root so hooks/ paths resolve wherever this is called from.
+cd "$(dirname "$0")/.."
+
 PASS=0 FAIL=0
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -30,6 +33,7 @@ cat > "$STUB_BIN/curl" <<'EOF'
 #!/bin/bash
 # Deterministic curl replacement. -w present => status probe (pre hook),
 # otherwise header capture (post hook).
+[ -n "${CURL_STUB_LOG:-}" ] && printf '%s\n' "$*" >> "$CURL_STUB_LOG"
 has_w=0
 for a in "$@"; do [ "$a" = "-w" ] && has_w=1; done
 if [ $has_w -eq 1 ]; then
@@ -63,13 +67,14 @@ assert_eq() {
 }
 
 # run_pre / run_post: invoke a hook with isolated project dir + stubbed curl.
+# The cache for project <dir> lives at <dir>.cache, outside the project.
 # Usage: run_pre <project_dir> <input_json> ; rc in $RC, stderr in $ERR.
 RC=0 ERR=""
 run_hook() {
   local script="$1" proj="$2" input="$3"
   RC=0
   ERR=$(printf '%s' "$input" | \
-    CLAUDE_PROJECT_DIR="$proj" PATH="$STUB_BIN:$PATH" \
+    CLAUDE_PROJECT_DIR="$proj" SDD_CACHE_DIR="$proj.cache" PATH="$STUB_BIN:$PATH" \
     CURL_STUB_STATUS="${CURL_STUB_STATUS:-000}" \
     CURL_STUB_HEADERS="${CURL_STUB_HEADERS:-}" \
     bash "hooks/$script" 2>&1 >/dev/null) || RC=$?
@@ -79,7 +84,7 @@ run_hook() {
 seed_entry() {
   # ${4-...} (not ${4:-...}): an explicitly empty etag must stay empty.
   local proj="$1" url="$2" content="$3" etag="${4-\"seed-etag\"}"
-  local dir="$proj/.claude/sdd-cache"
+  local dir="$proj.cache"
   mkdir -p "$dir"
   jq -n \
     --arg url "$url" \
@@ -167,7 +172,7 @@ printf '\nTest 9: post — no url in tool_input\n'
 P="$TMPDIR/t9"; mkdir -p "$P"
 run_hook sdd-cache-post.sh "$P" '{"tool_input":{},"tool_response":{"result":"body"}}'
 assert_eq "exit 0 without url" "0" "$RC"
-assert_eq "no cache dir created" "0" "$([ -d "$P/.claude/sdd-cache" ] && echo 1 || echo 0)"
+assert_eq "no cache dir created" "0" "$([ -d "$P.cache" ] && echo 1 || echo 0)"
 
 # ── Test 10: post — unknown tool_response shape writes nothing ────────────
 printf '\nTest 10: post — unextractable tool_response\n'
@@ -175,7 +180,7 @@ P="$TMPDIR/t10"; mkdir -p "$P"
 run_hook sdd-cache-post.sh "$P" \
   "$(jq -n --arg url "$URL" '{tool_input:{url:$url}, tool_response:42}')"
 assert_eq "exit 0 on unknown shape" "0" "$RC"
-assert_eq "no cache dir created" "0" "$([ -d "$P/.claude/sdd-cache" ] && echo 1 || echo 0)"
+assert_eq "no cache dir created" "0" "$([ -d "$P.cache" ] && echo 1 || echo 0)"
 
 # ── Test 11: post — caches when the origin provides an ETag ───────────────
 printf '\nTest 11: post — entry written with origin validators\n'
@@ -185,7 +190,7 @@ etag: "abc123"
 last-modified: Wed, 01 Jan 2026 00:00:00 GMT' \
   run_hook sdd-cache-post.sh "$P" "$(post_input "$URL" "fetched body")"
 assert_eq "exit 0" "0" "$RC"
-CF="$P/.claude/sdd-cache/$(hash_key "$URL").json"
+CF="$P.cache/$(hash_key "$URL").json"
 assert_eq "cache file exists" "1" "$([ -f "$CF" ] && echo 1 || echo 0)"
 assert_eq "url stored" "$URL" "$(jq -r '.url' "$CF")"
 assert_eq "etag stored" '"abc123"' "$(jq -r '.etag' "$CF")"
@@ -200,14 +205,14 @@ CURL_STUB_HEADERS='HTTP/2 200
 etag: "str-etag"' \
   run_hook sdd-cache-post.sh "$P" \
   "$(jq -n --arg url "$URL" '{tool_input:{url:$url}, tool_response:"plain string body"}')"
-CF="$P/.claude/sdd-cache/$(hash_key "$URL").json"
+CF="$P.cache/$(hash_key "$URL").json"
 assert_eq "content from string response" "plain string body" "$(jq -r '.content' "$CF" 2>/dev/null)"
 
 # ── Test 13: post — origin without validators removes stale entry ─────────
 printf '\nTest 13: post — no validators from origin\n'
 P="$TMPDIR/t13"; mkdir -p "$P"
 seed_entry "$P" "$URL" "stale body"
-CF="$P/.claude/sdd-cache/$(hash_key "$URL").json"
+CF="$P.cache/$(hash_key "$URL").json"
 CURL_STUB_HEADERS='HTTP/2 200
 content-type: text/html' \
   run_hook sdd-cache-post.sh "$P" "$(post_input "$URL" "new body")"
@@ -224,7 +229,7 @@ etag: "redirect-etag"
 HTTP/1.1 200 OK
 etag: "final-etag"' \
   run_hook sdd-cache-post.sh "$P" "$(post_input "$URL" "body")"
-CF="$P/.claude/sdd-cache/$(hash_key "$URL").json"
+CF="$P.cache/$(hash_key "$URL").json"
 assert_eq "etag from final block" '"final-etag"' "$(jq -r '.etag' "$CF" 2>/dev/null)"
 
 # ── Test 15: round-trip — post writes, pre serves the same bytes ──────────
@@ -239,6 +244,47 @@ CURL_STUB_STATUS=304 run_hook sdd-cache-pre.sh "$P" "$(pre_input "$URL")"
 assert_eq "pre serves the entry post wrote (exit 2)" "2" "$RC"
 served=$(printf '%s\n' "$ERR" | sed -n '/BEGIN CACHED CONTENT/,/END CACHED CONTENT/p' | sed '1d;$d')
 assert_eq "round-trip content byte-exact" "$BODY" "$served"
+
+# ── Test 16: pre — an entry stored for another URL is never served ───────
+printf '\nTest 16: pre — cached url must match the request\n'
+P="$TMPDIR/t16"; mkdir -p "$P"
+seed_entry "$P" "$URL" "planted body"
+CF="$P.cache/$(hash_key "$URL").json"
+jq '.url = "https://evil.example.com/"' "$CF" > "$CF.tmp" && mv "$CF.tmp" "$CF"
+CURL_STUB_STATUS=304 run_hook sdd-cache-pre.sh "$P" "$(pre_input "$URL")"
+assert_eq "exit 0 on url mismatch" "0" "$RC"
+assert_eq "planted body not served" "0" "$(printf '%s' "$ERR" | grep -c 'planted body')"
+
+# ── Test 17: non-http(s) URLs never reach curl ────────────────────────────
+printf '\nTest 17: file:// and option-shaped URLs are rejected\n'
+P="$TMPDIR/t17"; mkdir -p "$P"
+export CURL_STUB_LOG="$TMPDIR/t17-curl.log"; : > "$CURL_STUB_LOG"
+for bad in 'file:///etc/passwd' '-o/tmp/x' 'ftp://example.com/a'; do
+  seed_entry "$P" "$bad" "body"
+  CURL_STUB_STATUS=304 run_hook sdd-cache-pre.sh "$P" "$(pre_input "$bad")"
+  assert_eq "pre exit 0 for $bad" "0" "$RC"
+  CURL_STUB_HEADERS='HTTP/2 200
+etag: "x"' run_hook sdd-cache-post.sh "$P" "$(post_input "$bad" "body")"
+  assert_eq "post exit 0 for $bad" "0" "$RC"
+done
+assert_eq "curl never called" "0" "$(wc -l < "$CURL_STUB_LOG" | tr -d ' ')"
+CURL_STUB_STATUS=304 run_hook sdd-cache-pre.sh "$P" "$(pre_input "$URL")"
+seed_entry "$P" "$URL" "body"
+CURL_STUB_STATUS=304 run_hook sdd-cache-pre.sh "$P" "$(pre_input "$URL")"
+assert_eq "curl limited to http(s), redirects too" "1" \
+  "$(grep -c -- "--proto =http,https --proto-redir =http,https" "$CURL_STUB_LOG")"
+unset CURL_STUB_LOG
+
+# ── Test 18: post — a body larger than one argument (128 KiB) is cached ──
+printf '\nTest 18: post — large body is cached\n'
+P="$TMPDIR/t18"; mkdir -p "$P"
+head -c 300000 /dev/zero | tr '\0' 'a' > "$TMPDIR/big.txt"
+BIG_INPUT=$(jq -Rs --arg url "$URL" \
+  '{tool_input:{url:$url, prompt:"p"}, tool_response:{result:.}}' < "$TMPDIR/big.txt")
+CURL_STUB_HEADERS='HTTP/2 200
+etag: "big"' run_hook sdd-cache-post.sh "$P" "$BIG_INPUT"
+CF="$P.cache/$(hash_key "$URL").json"
+assert_eq "large body stored in full" "300000" "$(jq -r '.content | length' "$CF" 2>/dev/null)"
 
 # ── Summary ──────────────────────────────────────────────────────────────
 printf '\n══════════════════════════════════════════\n'
