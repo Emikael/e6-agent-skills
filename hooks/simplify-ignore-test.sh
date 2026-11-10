@@ -6,29 +6,22 @@
 
 set -euo pipefail
 
+# Run from the repo root so hooks/ paths resolve wherever this is called from.
+cd "$(dirname "$0")/.."
+
 PASS=0 FAIL=0
-TMPDIR=$(mktemp -d)
+# Resolve symlinks (macOS /var → /private/var) so paths match the hook's view.
+TMPDIR=$(cd "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$TMPDIR"' EXIT
 
 export CACHE="$TMPDIR/cache"
 mkdir -p "$CACHE"
 
-# Extract function definitions we need
-hash_cmd() {
-  if command -v shasum >/dev/null 2>&1; then shasum
-  elif command -v sha1sum >/dev/null 2>&1; then sha1sum
-  else printf '%s\n' "error: missing shasum or sha1sum" >&2; exit 1; fi
-}
-file_id() { printf '%s' "$1" | hash_cmd | cut -c1-16; }
-block_hash() { printf '%s' "$1" | hash_cmd | cut -c1-8; }
-escape_glob() {
-  local s="$1"
-  s="${s//\\/\\\\}"
-  s="${s//\*/\\*}"
-  s="${s//\?/\\?}"
-  s="${s//\[/\\[}"
-  printf '%s' "$s"
-}
+# Load the helpers from the hook itself so the tests cannot drift from it.
+# file_id and block_hash are one-liners; the others span to a closing brace.
+eval "$(sed -n '/^hash_cmd()/,/^}/p' hooks/simplify-ignore.sh)"
+eval "$(sed -n '/^escape_glob()/,/^}/p' hooks/simplify-ignore.sh)"
+eval "$(sed -n '/^file_id()/p; /^block_hash()/p' hooks/simplify-ignore.sh)"
 
 # Extract filter_file from the hook script (line 59 "filter_file()" to line 142 closing brace)
 eval "$(sed -n '/^filter_file()/,/^}/p' hooks/simplify-ignore.sh)"
@@ -240,7 +233,7 @@ printf '\nTest 10: Malformed JSON input produces warning\n'
 
 # Without jq the hook's guard exits before parsing input. Assert whichever
 # branch this machine can exercise (same pattern as session-start-test.sh).
-warning_out=$(echo 'NOT_JSON{{{' | bash hooks/simplify-ignore.sh 2>&1) || true
+warning_out=$(echo 'NOT_JSON{{{' | SIMPLIFY_IGNORE_CACHE_DIR="$TMPDIR/t10.cache" bash hooks/simplify-ignore.sh 2>&1) || true
 if command -v jq >/dev/null 2>&1; then
   assert_eq "warning on bad JSON" "1" "$(printf '%s' "$warning_out" | grep -c 'Warning.*failed to parse')"
 else
@@ -264,7 +257,7 @@ const protectedValue = 42;
 /* simplify-ignore-end */
 EOF
 
-  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" bash hooks/simplify-ignore.sh; }
+  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" SIMPLIFY_IGNORE_CACHE_DIR="$PROJ.cache" bash hooks/simplify-ignore.sh; }
   read_event=$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s"}}' "$TARGET")
   edit_event=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$TARGET")
 
@@ -308,7 +301,7 @@ const protectedValue = 42;
 /* simplify-ignore-end */
 EOF
 
-  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" bash hooks/simplify-ignore.sh; }
+  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" SIMPLIFY_IGNORE_CACHE_DIR="$PROJ.cache" bash hooks/simplify-ignore.sh; }
   read_event=$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s"}}' "$TARGET")
 
   hook_event "$read_event"
@@ -319,7 +312,7 @@ EOF
 
   stop_out=$(hook_event '{}' 2>&1) || true
 
-  PROJ_CACHE="$PROJ/.claude/.simplify-ignore-cache"
+  PROJ_CACHE="$PROJ.cache"
   RECOVERED="$PROJ_CACHE/$(file_id "$TARGET").recovered"
 
   assert_eq "backup restored over the rewrite" "1" "$(grep -c 'const protectedValue = 42;' "$TARGET")"
@@ -348,7 +341,7 @@ const protectedValue = 42;
 /* simplify-ignore-end */
 EOF
 
-  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" bash hooks/simplify-ignore.sh; }
+  hook_event() { printf '%s' "$1" | CLAUDE_PROJECT_DIR="$PROJ" SIMPLIFY_IGNORE_CACHE_DIR="$PROJ.cache" bash hooks/simplify-ignore.sh; }
   read_event=$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s"}}' "$TARGET")
 
   # Read → placeholder on disk, backup taken
@@ -384,7 +377,7 @@ rt_hook_event() {
   else
     input='{}'
   fi
-  printf '%s' "$input" | CLAUDE_PROJECT_DIR="$proj" bash hooks/simplify-ignore.sh
+  printf '%s' "$input" | CLAUDE_PROJECT_DIR="$proj" SIMPLIFY_IGNORE_CACHE_DIR="$proj.cache" bash hooks/simplify-ignore.sh
 }
 
 # ── Test 14: Read → Stop restores the file byte-identically ──────────────
@@ -452,7 +445,7 @@ rt_hook_event "$PROJ" "Edit" "$RT"
 assert_eq "disk still placeholdered after Edit" "1" "$(grep -c 'BLOCK_' "$RT")"
 assert_eq "secret still absent from disk after Edit" "0" "$(grep -c 'secret' "$RT")"
 assert_eq "added line survives re-filter" "1" "$(grep -c 'const added' "$RT")"
-BAK=$(ls "$PROJ/.claude/.simplify-ignore-cache"/*.bak 2>/dev/null | head -1)
+BAK=$(ls "$PROJ.cache"/*.bak 2>/dev/null | head -1)
 assert_eq "backup holds real content" "1" "$(grep -c 'const secret = 42' "${BAK:-/dev/null}")"
 assert_eq "backup holds the edit" "1" "$(grep -c 'const added' "${BAK:-/dev/null}")"
 
@@ -468,6 +461,82 @@ fi
 
 else
   printf '\nTests 14-16 skipped: jq not available (hook no-ops without it)\n'
+fi
+
+# ── Tests 17-21: the cache is not trusted beyond the project ─────────────
+if command -v jq >/dev/null 2>&1; then
+
+# ── Test 17: an in-project legacy cache is never read ─────────────────────
+printf '\nTest 17: Stop ignores a cache shipped inside the project\n'
+PROJ="$TMPDIR/sec17"; mkdir -p "$PROJ/.claude/.simplify-ignore-cache"
+VICTIM="$TMPDIR/victim17.txt"
+printf 'original\n' > "$VICTIM"
+LEGACY="$PROJ/.claude/.simplify-ignore-cache"
+LID=$(file_id "$VICTIM")
+printf '%s' "$VICTIM" > "$LEGACY/$LID.path"
+printf 'PWNED\n' > "$LEGACY/$LID.bak"
+stop_out=$(rt_hook_event "$PROJ" "" "" 2>&1) || true
+assert_eq "file outside the project untouched" "original" "$(cat "$VICTIM")"
+assert_eq "legacy cache reported" "1" "$(printf '%s' "$stop_out" | grep -c 'ignoring legacy cache')"
+
+# ── Test 18: a planted entry pointing outside the project is refused ─────
+printf '\nTest 18: Stop refuses an entry whose path is outside the project\n'
+PROJ="$TMPDIR/sec18"; mkdir -p "$PROJ" "$PROJ.cache"
+VICTIM="$TMPDIR/victim18.txt"
+printf 'original\n' > "$VICTIM"
+VID=$(file_id "$VICTIM")
+printf '%s' "$VICTIM" > "$PROJ.cache/$VID.path"
+printf 'PWNED\n' > "$PROJ.cache/$VID.bak"
+stop_out=$(rt_hook_event "$PROJ" "" "" 2>&1) || true
+assert_eq "outside file untouched" "original" "$(cat "$VICTIM")"
+assert_eq "refusal reported" "1" "$(printf '%s' "$stop_out" | grep -c 'refusing cache entry')"
+assert_eq "no .recovered created next to outside file" "0" "$([ -e "$VICTIM.recovered" ] && echo 1 || echo 0)"
+MISSING="$TMPDIR/nowhere18/new.txt"
+MID=$(file_id "$MISSING")
+printf '%s' "$MISSING" > "$PROJ.cache/$MID.path"
+printf 'PWNED\n' > "$PROJ.cache/$MID.bak"
+rt_hook_event "$PROJ" "" "" 2>/dev/null || true
+assert_eq "no file created outside the project" "0" "$([ -e "$MISSING.recovered" ] && echo 1 || echo 0)"
+
+# ── Test 19: Read refuses files outside the project and symlinks ─────────
+printf '\nTest 19: Read leaves files outside the project and symlinks alone\n'
+PROJ="$TMPDIR/sec19"; mkdir -p "$PROJ"
+OUTSIDE="$TMPDIR/outside19.js"
+printf '// simplify-ignore-start\nsecret\n// simplify-ignore-end\n' > "$OUTSIDE"
+rt_hook_event "$PROJ" "Read" "$OUTSIDE"
+assert_eq "outside file not filtered" "0" "$(grep -c 'BLOCK_' "$OUTSIDE")"
+ln -s "$OUTSIDE" "$PROJ/link.js"
+rt_hook_event "$PROJ" "Read" "$PROJ/link.js"
+assert_eq "symlink target not filtered" "0" "$(grep -c 'BLOCK_' "$OUTSIDE")"
+assert_eq "no cache entry for refused files" "0" "$(ls "$PROJ.cache"/*.bak 2>/dev/null | wc -l | tr -d ' ')"
+
+# ── Test 20: a file swapped for a symlink mid-session is not written ─────
+printf '\nTest 20: Stop refuses a file replaced by a symlink\n'
+PROJ="$TMPDIR/sec20"; mkdir -p "$PROJ"
+TARGET="$PROJ/app.js"
+printf 'a\n// simplify-ignore-start\nsecret\n// simplify-ignore-end\n' > "$TARGET"
+VICTIM="$TMPDIR/victim20.txt"; printf 'original\n' > "$VICTIM"
+rt_hook_event "$PROJ" "Read" "$TARGET"
+rm "$TARGET"; ln -s "$VICTIM" "$TARGET"
+rt_hook_event "$PROJ" "" "" 2>/dev/null || true
+assert_eq "symlink target untouched" "original" "$(cat "$VICTIM")"
+assert_eq "backup kept for manual recovery" "1" "$(ls "$PROJ.cache"/*.bak 2>/dev/null | wc -l | tr -d ' ')"
+
+# ── Test 21: a missing lock does not abort Stop ──────────────────────────
+printf '\nTest 21: Stop restores every file even when a lock is gone\n'
+PROJ="$TMPDIR/sec21"; mkdir -p "$PROJ"
+for n in one two; do
+  printf 'x\n// simplify-ignore-start\nsecret_%s\n// simplify-ignore-end\n' "$n" > "$PROJ/$n.js"
+  rt_hook_event "$PROJ" "Read" "$PROJ/$n.js"
+done
+rmdir "$PROJ.cache"/*.lock
+set +e; rt_hook_event "$PROJ" "" "" 2>/dev/null; rc=$?; set -e
+assert_eq "Stop exits 0" "0" "$rc"
+assert_eq "first file restored" "1" "$(grep -c 'secret_one' "$PROJ/one.js")"
+assert_eq "second file restored" "1" "$(grep -c 'secret_two' "$PROJ/two.js")"
+
+else
+  printf '\nTests 17-21 skipped: jq not available (hook no-ops without it)\n'
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────

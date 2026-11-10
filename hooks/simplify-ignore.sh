@@ -28,7 +28,6 @@ if ! command -v jq >/dev/null 2>&1; then
   printf '%s\n' "error: missing jq" >&2; exit 1
 fi
 
-CACHE="${CLAUDE_PROJECT_DIR:-.}/.claude/.simplify-ignore-cache"
 if [ -t 0 ]; then INPUT="{}"; else INPUT=$(cat); fi
 
 # Parse hook input — trap errors explicitly so set -e doesn't cause
@@ -63,6 +62,39 @@ escape_glob() {
   s="${s//\[/\\[}"
   printf '%s' "$s"
 }
+
+# ── Project scope and cache location ──────────────────────────────────────────
+# The cache lives outside the project, in per-user state keyed by the resolved
+# project directory. A cache inside the repo could be shipped by the repo
+# itself, and Stop writes each cached backup to the path its entry names, so a
+# planted entry could overwrite any file the user can write.
+# SIMPLIFY_IGNORE_CACHE_DIR overrides the location (tests use it).
+resolve_dir() { (cd "$1" 2>/dev/null && pwd -P); }
+
+# canonical_path: print $1 with its directory resolved through symlinks.
+# Fails when the directory does not exist.
+canonical_path() {
+  local dir base
+  dir=$(dirname "$1"); base=$(basename "$1")
+  dir=$(resolve_dir "$dir") || return 1
+  [ -n "$dir" ] || return 1
+  if [ "$dir" = "/" ]; then printf '/%s' "$base"; else printf '%s/%s' "$dir" "$base"; fi
+}
+
+# in_project: $1 is a canonical path strictly inside the project, and the file
+# itself is not a symlink (a symlink could point anywhere).
+in_project() {
+  case "$1" in "$PROJECT_DIR"/*) ;; *) return 1 ;; esac
+  [ ! -L "$1" ]
+}
+
+PROJECT_DIR=$(resolve_dir "${CLAUDE_PROJECT_DIR:-.}") || PROJECT_DIR=""
+if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "/" ]; then
+  printf 'Warning: simplify-ignore cannot resolve the project directory, doing nothing\n' >&2
+  exit 0
+fi
+CACHE="${SIMPLIFY_IGNORE_CACHE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/e6-agent-skills/simplify-ignore/$(file_id "$PROJECT_DIR")}"
+make_cache() { (umask 077; mkdir -p "$CACHE"); }
 
 # ── filter_file: replace simplify-ignore blocks with BLOCK_<hash> placeholders ─
 # Reads $1 (source), writes filtered version to $2 (dest), saves blocks to cache.
@@ -234,6 +266,12 @@ has_placeholders() {
 
 # ── Stop: expand each cached file in place, backup only as fallback ──────────
 if [ -z "$TOOL_NAME" ]; then
+  # Older versions kept the cache inside the project. Never read it: a repo can
+  # ship that directory, so its entries are not trusted. Point the user at it.
+  if [ -d "$PROJECT_DIR/.claude/.simplify-ignore-cache" ]; then
+    printf 'Warning: ignoring legacy cache %s; it is no longer read. Check it by hand if a session from an older version left placeholders behind, then delete it.\n' \
+      "$PROJECT_DIR/.claude/.simplify-ignore-cache" >&2
+  fi
   [ -d "$CACHE" ] || exit 0
   for bak in "$CACHE"/*.bak; do
     [ -f "$bak" ] || continue
@@ -241,6 +279,18 @@ if [ -z "$TOOL_NAME" ]; then
     pathfile="$CACHE/${fid}.path"
     [ -f "$pathfile" ] || { rm -f "$bak"; continue; }
     orig=$(cat "$pathfile")
+    # Only restore to the path this entry was created for, inside the project.
+    # A refused entry is left in place so its backup is not lost.
+    if [ "$(file_id "$orig")" != "$fid" ] || ! in_project "$orig"; then
+      printf 'Warning: refusing cache entry %s: its path %s is not a file inside %s. Backup left at %s\n' \
+        "$fid" "$orig" "$PROJECT_DIR" "$bak" >&2
+      continue
+    fi
+    if [ -d "$(dirname "$orig")" ] && [ "$(canonical_path "$orig")" != "$orig" ]; then
+      printf 'Warning: refusing cache entry %s: a directory in %s became a symlink. Backup left at %s\n' \
+        "$fid" "$orig" "$bak" >&2
+      continue
+    fi
     if [ -f "$orig" ]; then
       # A change can reach the file through a route that fires no Edit or Write
       # event (a Bash command, a formatter, an external editor), and the backup
@@ -262,20 +312,20 @@ if [ -z "$TOOL_NAME" ]; then
           "$orig" "$rewritten" >&2
       fi
       rm -f "$bak" "$pathfile" "$CACHE/${fid}".block.* "$CACHE/${fid}".reason.* "$CACHE/${fid}".prefix.* "$CACHE/${fid}".suffix.*
-      rmdir "$CACHE/${fid}.lock" 2>/dev/null
+      rmdir "$CACHE/${fid}.lock" 2>/dev/null || true
     else
       # File was moved/deleted — save backup as .recovered, don't destroy it
       mkdir -p "$(dirname "${orig}.recovered")"
       mv "$bak" "${orig}.recovered"
       rm -f "$pathfile" "$CACHE/${fid}".block.* "$CACHE/${fid}".reason.* "$CACHE/${fid}".prefix.* "$CACHE/${fid}".suffix.*
-      rmdir "$CACHE/${fid}.lock" 2>/dev/null
+      rmdir "$CACHE/${fid}.lock" 2>/dev/null || true
       printf 'Warning: %s was moved/deleted. Recovered original to %s.recovered\n' "$orig" "$orig" >&2
     fi
   done
   # Clean orphan locks (created but crash before backup)
   for lockdir in "$CACHE"/*.lock; do
     [ -d "$lockdir" ] || continue
-    rmdir "$lockdir" 2>/dev/null
+    rmdir "$lockdir" 2>/dev/null || true
   done
   exit 0
 fi
@@ -286,8 +336,12 @@ fi
 if [ "$TOOL_NAME" = "Read" ]; then
   [ -f "$FILE_PATH" ] || exit 0
   case "$(basename "$FILE_PATH")" in simplify-ignore*|SIMPLIFY-IGNORE*) exit 0 ;; esac
+  # Only filter files inside the project: Stop restores nothing outside it, so
+  # a file filtered there would keep its placeholders.
+  FILE_PATH=$(canonical_path "$FILE_PATH") || exit 0
+  in_project "$FILE_PATH" || exit 0
 
-  mkdir -p "$CACHE"
+  make_cache
   ID=$(file_id "$FILE_PATH")
 
   # If backup exists, file is already filtered — skip
@@ -319,13 +373,15 @@ if [ "$TOOL_NAME" = "Read" ]; then
     rm -f "$FILTERED"
   else
     rm -f "$FILTERED" "$CACHE/${ID}.bak" "$CACHE/${ID}.path"
-    rmdir "$CACHE/${ID}.lock" 2>/dev/null
+    rmdir "$CACHE/${ID}.lock" 2>/dev/null || true
   fi
   exit 0
 fi
 
 # ── PostToolUse Edit|Write: expand, then re-filter ────────────────────────────
 if [ "$TOOL_NAME" = "Edit" ] || [ "$TOOL_NAME" = "Write" ]; then
+  FILE_PATH=$(canonical_path "$FILE_PATH") || exit 0
+  in_project "$FILE_PATH" || exit 0
   ID=$(file_id "$FILE_PATH")
   [ -f "$CACHE/${ID}.bak" ] || exit 0
   ls "$CACHE/${ID}".block.* >/dev/null 2>&1 || exit 0
