@@ -1,0 +1,30 @@
+---
+description: Run a web performance audit via the web-performance-auditor persona
+---
+
+`/webperf` targets web applications. Do not use it for utility libraries, CLIs, or server-only code with no browser-facing output. This is an audit: do not edit source. Use e6-caveman for the summary.
+
+## Determine the mode
+
+**Deep mode** — activate when any of these is available:
+- A Lighthouse JSON report (e.g. `npx lighthouse <url> --output json --output-path ./report.json`)
+- A PageSpeed Insights JSON response (Lighthouse lab data plus CrUX field data)
+- A CrUX API response (requires `CRUX_API_KEY` or `GOOGLE_API_KEY` in the environment; never hard-code keys)
+- A DevTools performance trace
+- A live URL plus a browser or DevTools capability in the harness that can run Lighthouse or record a trace
+
+**Quick mode** — default otherwise. Scan source code for structural anti-patterns and label every finding `potential impact`.
+
+## Run the audit
+
+Spawn the `web-performance-auditor` subagent. Pass it:
+
+- The files, components, or diff under review
+- Any artifact paths or pasted JSON
+- The target URL or page name when known
+- The expected mode, so missing inputs surface if Deep was intended
+- Where to write the full report: the project's report location, or an ignored scratch path when project rules forbid committing reports
+
+## Output
+
+Return a bounded summary: the scorecard (sourced values only; unmeasured fields `not measured`), the top findings with severity and location, blockers, and a link to the full report. Do not paste the full report into the chat. In an active workflow, return to its coordinator.
