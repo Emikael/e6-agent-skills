@@ -111,6 +111,9 @@ test('policyViolations reports each directory rule', t => {
   write(path.join(paths.out, 'skills', 'alpha', 'nul.md'), 'a\0b');
   write(path.join(paths.out, 'commands', 'ship.md'), '---\ndescription: Ship.\nallowed-tools: Read, Bash(git:*)\n---\nStatus: !`git status`\n');
   write(path.join(paths.out, 'commands', 'read.md'), '---\ndescription: Read.\nallowed-tools: [Read, Grep]\n---\nBody.\n');
+  write(path.join(paths.out, 'skills', 'alpha', 'package.json'), '{"scripts":{}}');
+  write(path.join(paths.out, '.claude-plugin', 'marketplace.json'), '{}');
+  write(path.join(paths.out, '.claude', 'skills', 'x', 'SKILL.md'), 'x\n');
   write(path.join(paths.out, 'README.md'), 'Too short.\n');
   const manifest = path.join(paths.out, '.claude-plugin', 'plugin.json');
   write(manifest, JSON.stringify({ ...JSON.parse(fs.readFileSync(manifest, 'utf8')), hooks: './hooks/hooks.json' }));
@@ -125,6 +128,9 @@ test('policyViolations reports each directory rule', t => {
     /commands\/ship\.md: inline shell/,
     /README\.md: fewer than 40 words/,
     /plugin\.json: "hooks" is not allowed/,
+    /skills\/alpha\/package\.json: not allowed in the directory edition/,
+    /\.claude-plugin\/marketplace\.json: \.claude-plugin may hold only plugin\.json and images/,
+    /\.claude\/skills\/x\/SKILL\.md: \.claude\/ folders are not allowed/,
   ]) assert.match(violations, expected);
   assert.doesNotMatch(violations, /commands\/read\.md/);
 });

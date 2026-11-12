@@ -26,8 +26,8 @@ const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
 const TEXT_NAMES = new Set(['LICENSE', '.gitignore']);
 const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS']);
 const FORBIDDEN_DIRS = ['hooks', 'bin', 'workflows'];
-const FORBIDDEN_FILES = ['.mcp.json', '.lsp.json', 'package.json'];
-const FORBIDDEN_MANIFEST_KEYS = ['hooks', 'mcpServers', 'lspServers', 'experimental'];
+// Refused anywhere in the tree: config files Claude Code would load, and package manifests.
+const FORBIDDEN_FILES = ['.mcp.json', '.lsp.json', 'hooks.json', 'monitors.json', 'package.json', 'CLAUDE.md', 'CLAUDE.local.md'];
 const MAX_FILES = 512;
 const MAX_FILE_BYTES = 256 * 1024;
 const MIN_README_WORDS = 40;
@@ -91,7 +91,11 @@ function policyViolations(dir) {
     const parts = relative.split('/');
 
     if (FORBIDDEN_DIRS.includes(parts[0])) report(`${parts[0] === 'hooks' ? 'hooks are' : `${parts[0]}/ is`} not allowed`);
-    if (parts.length === 1 && FORBIDDEN_FILES.includes(relative)) report('not allowed in the directory edition');
+    if (FORBIDDEN_FILES.includes(path.basename(file))) report('not allowed in the directory edition');
+    if (relative.startsWith('.claude/')) report('.claude/ folders are not allowed');
+    if (parts.includes('.claude-plugin') && (parts.length !== 2 || parts[0] !== '.claude-plugin' || !(parts[1] === 'plugin.json' || IMAGE_EXTENSIONS.has(extension)))) {
+      report('.claude-plugin may hold only plugin.json and images');
+    }
     if (IMAGE_EXTENSIONS.has(extension)) continue;
     if (!TEXT_EXTENSIONS.has(extension) && !TEXT_NAMES.has(path.basename(file))) {
       report('file type not allowed (Markdown, text, JSON, YAML, or PNG/JPEG/GIF/WebP only)');
@@ -124,7 +128,7 @@ function policyViolations(dir) {
     violations.push('.claude-plugin/plugin.json: missing');
   } else {
     const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-    for (const key of FORBIDDEN_MANIFEST_KEYS) if (key in manifest) violations.push(`.claude-plugin/plugin.json: "${key}" is not allowed`);
+    for (const key of Object.keys(manifest)) if (!MANIFEST_KEYS.includes(key)) violations.push(`.claude-plugin/plugin.json: "${key}" is not allowed`);
     for (const key of ['name', 'version', 'description']) if (!manifest[key]) violations.push(`.claude-plugin/plugin.json: "${key}" is missing`);
     if (!manifest.license && !fs.existsSync(path.join(dir, 'LICENSE'))) violations.push('LICENSE: missing');
   }
