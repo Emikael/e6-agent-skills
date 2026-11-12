@@ -1,6 +1,7 @@
 name: Release Tag
 
-# Tags main with the plugin.json version once CI is green, so users can pin a release.
+# Tags main with the plugin.json version once CI is green, so users can pin a release,
+# and publishes the hook-free Claude directory edition to the claude-directory branch.
 # Bump the version in the plugin manifests (see scripts/validate-versions.js) to cut one.
 on:
   workflow_run:
@@ -36,3 +37,32 @@ jobs:
           git tag "$name--v$version" "$SHA"
           git push origin "refs/tags/$version" "refs/tags/$name--v$version"
           gh release create "$version" --target "$SHA" --title "$version" --generate-notes
+      # The Claude plugin directory follows this branch. It accepts hooks and scripts
+      # only from Verified organizations, so main itself cannot be submitted.
+      - name: Publish the Claude directory edition
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          version=$(node -p "require('./plugin.json').version")
+          edition="$RUNNER_TEMP/claude-directory"
+          if git fetch -q origin claude-directory; then
+            git worktree add -q -B claude-directory "$edition" FETCH_HEAD
+          else
+            git worktree add -q --orphan -b claude-directory "$edition"
+          fi
+          # One edition commit per version: the directory scans every commit on the branch.
+          published=$(node -p "try { require('$edition/.claude-plugin/plugin.json').version } catch { '' }")
+          if [ "$published" = "$version" ]; then
+            echo "Directory edition $version is already published."
+            exit 0
+          fi
+          node scripts/build-directory-plugin.js --out "$edition" --force
+          git -C "$edition" add -A
+          if git -C "$edition" diff --cached --quiet; then
+            echo "Directory edition unchanged; nothing to publish."
+            exit 0
+          fi
+          git -C "$edition" -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "e6-agent-skills $version directory edition (from $SHA)"
+          git -C "$edition" push origin claude-directory

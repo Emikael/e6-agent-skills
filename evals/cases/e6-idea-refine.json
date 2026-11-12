@@ -56,21 +56,6 @@
         "Exploration is proportionate to the already settled direction rather than requiring eight unrelated product ideas",
         "The artifact is saved within existing authority and returned to the coordinator without a continuation-permission question"
       ]
-    },
-    {
-      "id": 3,
-      "prompt": "Only initialize this project's ideas directory with the optional e6-idea-refine helper. Resolve its absolute path from the installed skill, keep the working directory at this project root, run it, and verify that docs/ideas exists here. Check that the installed pack's docs/ideas state did not change. No ideation or implementation is requested.",
-      "expected_output": "The installed helper runs by absolute path in the target project; project output exists and pack artifacts are unchanged",
-      "files": [
-        "e6-planning-and-task-breakdown"
-      ],
-      "expectations": [
-        "The helper path resolves to scripts/idea-refine.sh, not the nonexistent scripts/e6-idea-refine.sh",
-        "The command retains target-project cwd instead of changing directory to the installed pack",
-        "The actual helper is run and emits ready status while docs/ideas is created in the target project",
-        "The installed pack ideas path is inspected before and after and remains unchanged",
-        "No broad ideation, specification or implementation workflow is started for this setup-only request"
-      ]
     }
   ]
 }

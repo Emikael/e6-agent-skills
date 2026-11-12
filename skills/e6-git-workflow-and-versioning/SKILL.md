@@ -37,7 +37,7 @@ Run project checks and applicable acceptance tests. When splitting a dirty tree,
 
 Inspect staged files for secrets and generated output with the project's secret scanner (redacted output) plus diff review; never print credential values. Lockfiles and migrations may belong in history; local environment files and build output usually do not.
 
-Commit a verified increment only within authorization. Use the project's message convention; otherwise use Conventional Commits, `type(scope)!: summary`, with types such as `feat`, `fix`, `refactor`, `test`, `docs`, or `chore` and a body explaining non-obvious intent. A `!` or a `BREAKING CHANGE:` footer marks a major bump under the [semantic-version rules](#5-prepare-the-pr-or-release).
+Commit a verified increment only within authorization. Use the project's message convention; otherwise use Conventional Commits, `type(scope)!: summary`, with types such as `feat`, `fix`, `refactor`, `test`, `docs`, or `chore` and a body explaining non-obvious intent. The exclamation mark or a `BREAKING CHANGE:` footer marks a major bump under the [semantic-version rules](#5-prepare-the-pr-or-release).
 
 ### 4. Handle failures and conflicts safely
 

@@ -139,6 +139,8 @@ Prefer a native integration? Pick your tool below.
 
 Enable the plugin and start a new session to load its compact SessionStart bootstrap.
 
+**Claude plugin directory:** the directory accepts hooks and script files only from Verified organizations, so it lists a generated edition with the same skills, agents, commands, and references and no hook. Each release publishes it to the [`claude-directory`](https://github.com/Emikael/e6-agent-skills/tree/claude-directory) branch; build it locally with `node scripts/build-directory-plugin.js --out dist/claude-directory`. Without the hook, the coordinator loads from its skill description; paste [the bootstrap](references/workflow-bootstrap.md) into `CLAUDE.md` to apply it in every session.
+
 **What the plugin runs:** one `SessionStart` hook (`hooks/hooks.json` → `hooks/session-start.sh`, Bash). It prints `references/workflow-bootstrap.md` and the path to the `using-e6-agent-skills` router as session context. It makes no network requests, writes no files, and reads no credentials; its only environment check is whether `CURSOR_PLUGIN_ROOT` is set, to choose the output format. The plugin ships no MCP servers, `bin/` executables, or package installs. The `scripts/` directory holds developer and CI tools that the hook does not run.
 
 > **SSH errors?** For `owner/repo` sources, Claude Code clones over SSH when your key authenticates to GitHub and over HTTPS otherwise. To always use HTTPS, set `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`, or add the marketplace by its HTTPS URL:
@@ -519,7 +521,7 @@ node scripts/validate-commands.js
 node scripts/run-evals.js --min-rank1 95
 ```
 
-There are 71 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
+There are 70 behavioral scenarios across 26 skill case files, with runnable fixtures and optional Claude/Codex execution. Lexical ranking tests vocabulary within this catalog; it does not prove natural model activation or priority against another plugin. Behavioral dry-runs validate inputs without running a model. Actual model traces, tests, and runtime artifacts establish compliance. See the [eval guide](evals/README.md) and [change report](docs/sdlc-workflow-report.md).
 
 ---
 
@@ -537,7 +539,7 @@ The portable core stays in shared directories. Host-specific paths are native di
 | Codex adapter | `.codex-plugin/`, `.agents/plugins/` | Codex plugin metadata and marketplace registration for the CLI and app; Codex consumes `skills/` directly |
 | Cursor adapter | `.cursor-plugin/`, `hooks/hooks-cursor.json` | Cursor plugin manifest and `sessionStart` bootstrap (same script as Claude) |
 | GitHub Copilot CLI adapter | `plugin.json` | Root plugin metadata; Copilot CLI discovers `skills/` by convention and does not register the lifecycle wrappers |
-| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, bootstrap installer, portable skill builder, routing evals, and CI |
+| Contributor tooling | `scripts/`, `evals/` (26 case files), `.github/workflows/` | Validation, bootstrap installer, portable skill builder, Claude directory edition builder, routing evals, and CI |
 | Documentation | `docs/` | Universal guidance and per-tool setup guides |
 
 Tools without a checked-in adapter directory install or copy the shared `skills/` core into their own native location. The [Quick Start](#quick-start) links the setup guide for each supported host.

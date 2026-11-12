@@ -21,6 +21,18 @@
       {
         "prompt": "Take this request from initial context through verified handoff using the e6 workflow",
         "top_k": 3
+      },
+      {
+        "prompt": "Implement the feature described in this ticket",
+        "top_k": 3
+      },
+      {
+        "prompt": "Add an option for users to export their reports, and build the whole change",
+        "top_k": 3
+      },
+      {
+        "prompt": "Change the password reset behavior",
+        "top_k": 3
       }
     ],
     "negative": [
