@@ -31,6 +31,9 @@ jobs:
       - name: Test portable skill builder
         run: node --test scripts/build-portable-skills-test.js
 
+      - name: Test Claude directory edition (no hooks, allowed file types only)
+        run: node --test scripts/build-directory-plugin-test.js
+
       - name: Test benchmark harness
         run: node --test scripts/run-benchmark-test.js
 

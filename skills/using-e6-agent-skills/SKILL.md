@@ -1,6 +1,6 @@
 ---
 name: using-e6-agent-skills
-description: Use when starting an engineering task or session, deciding which skill or workflow applies, routing a request through this pack, or implementing a feature from request to verified handoff without naming each skill.
+description: Use when asked to build, add, implement, or change a feature or behavior in code, before the first edit. Use when starting an engineering task or session, deciding which skill or workflow applies, routing a request through this pack, or taking a request to a verified handoff without naming each skill.
 ---
 
 # Using E6 Agent Skills

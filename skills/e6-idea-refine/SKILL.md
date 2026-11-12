@@ -73,7 +73,7 @@ Use the project's existing idea location; otherwise `docs/ideas/<idea>.md`:
 <Material unknowns, or none>
 ```
 
-Saving this working artifact is part of an authorized refinement task; preserve existing work. Create `docs/ideas/` if absent (the optional helper is `scripts/idea-refine.sh`, run from the target project root).
+Saving this working artifact is part of an authorized refinement task; preserve existing work. Create `docs/ideas/` in the target project if absent.
 
 ## Workflow Handoff
 

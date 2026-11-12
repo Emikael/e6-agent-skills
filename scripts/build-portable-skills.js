@@ -284,4 +284,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { mapLinks, writeZip, crc32, brokenLinks, codeSpanPaths };
+module.exports = { mapLinks, writeZip, crc32, brokenLinks, codeSpanPaths, listFiles, isInside, toPosix, splitTarget, isLocalTarget };
