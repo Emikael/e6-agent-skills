@@ -5,15 +5,23 @@
  * holds .claude-plugin/plugin.json as the plugin and accepts hooks and files
  * other than Markdown, text, JSON, YAML, and images only from Verified
  * organizations, so the repository root cannot be submitted as-is.
+ *
+ * The edition is committed to claude-directory/ on main, the folder the
+ * directory listing tracks. With no --out it rebuilds that folder; --check
+ * fails when the folder no longer matches its sources.
  */
 'use strict';
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { mapLinks, brokenLinks, listFiles, isInside, toPosix, splitTarget, isLocalTarget } = require('./build-portable-skills.js');
 
 const DEFAULT_REPO_URL = 'https://github.com/Emikael/e6-agent-skills/blob/main';
-const USAGE = 'Usage: node scripts/build-directory-plugin.js --out <directory> [--pack <pack-root>] [--force] [--repo-url <url>]';
+const EDITION_DIR = 'claude-directory';
+const USAGE = `Usage: node scripts/build-directory-plugin.js [--out <directory>] [--check] [--pack <pack-root>] [--force] [--repo-url <url>]
+  --out defaults to <pack-root>/${EDITION_DIR}, which is rebuilt in place.
+  --check builds to a temporary folder and fails if --out differs from it.`;
 
 // Source directory → edition directory. Commands move to the default commands/ location.
 const COMPONENT_DIRS = [['skills', 'skills'], ['agents', 'agents'], ['references', 'references'], ['.claude/commands', 'commands']];
@@ -33,11 +41,12 @@ const MAX_FILE_BYTES = 256 * 1024;
 const MIN_README_WORDS = 40;
 
 function parseArgs(args) {
-  const options = { pack: path.resolve(__dirname, '..'), force: false, repoUrl: DEFAULT_REPO_URL };
+  const options = { pack: path.resolve(__dirname, '..'), force: false, check: false, repoUrl: DEFAULT_REPO_URL };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--help' || arg === '-h') return { help: true };
     if (arg === '--force') options.force = true;
+    else if (arg === '--check') options.check = true;
     else if (['--out', '--pack', '--repo-url'].includes(arg)) {
       const value = args[++i];
       if (!value || value.startsWith('--')) throw new Error(`Missing value for ${arg}`);
@@ -48,8 +57,13 @@ function parseArgs(args) {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
-  if (!options.out) throw new Error('--out is required.');
+  if (!options.out) options.out = path.join(options.pack, EDITION_DIR);
   return options;
+}
+
+/** True for the pack's own committed edition folder, which is always safe to replace. */
+function isEditionDir(out, pack) {
+  return path.relative(path.join(pack, EDITION_DIR), out) === '';
 }
 
 function frontmatter(text) {
@@ -149,10 +163,11 @@ function prepareOut(out, force) {
 
 function build(options) {
   const { pack, out, repoUrl } = options;
-  if (isInside(out, pack) && !toPosix(path.relative(pack, out)).startsWith('dist/')) {
-    throw new Error('--out must be outside the pack, or under its dist/ directory.');
+  const inPlace = isEditionDir(out, pack);
+  if (isInside(out, pack) && !inPlace && !toPosix(path.relative(pack, out)).startsWith('dist/')) {
+    throw new Error(`--out must be outside the pack, its ${EDITION_DIR}/ folder, or under its dist/ directory.`);
   }
-  prepareOut(out, options.force);
+  prepareOut(out, options.force || inPlace);
 
   // Output file → source file, so relative links resolve against where they were written.
   const sources = new Map();
@@ -198,11 +213,48 @@ function build(options) {
   return { version: edition.version, files: sources.size + 1 };
 }
 
+function editionFiles(dir) {
+  if (!fs.existsSync(dir)) return new Map();
+  const gitDir = path.join(dir, '.git');
+  return new Map(listFiles(dir)
+    .filter(file => file !== gitDir && !isInside(file, gitDir) && path.basename(file) !== '.DS_Store')
+    .map(file => [toPosix(path.relative(dir, file)), file]));
+}
+
+/** Builds a fresh edition in a temporary folder; returns one line per file in --out that differs from it. */
+function staleFiles(options) {
+  const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-directory-check-'));
+  try {
+    build({ ...options, out: fresh, force: true });
+    const expected = editionFiles(fresh);
+    const actual = editionFiles(options.out);
+    const stale = [];
+    for (const [relative, file] of expected) {
+      if (!actual.has(relative)) stale.push(`${relative}: missing`);
+      else if (!fs.readFileSync(file).equals(fs.readFileSync(actual.get(relative)))) stale.push(`${relative}: out of date`);
+    }
+    for (const relative of actual.keys()) if (!expected.has(relative)) stale.push(`${relative}: not generated from the sources`);
+    return stale.sort();
+  } finally {
+    fs.rmSync(fresh, { recursive: true, force: true });
+  }
+}
+
 function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     if (options.help) {
       console.log(USAGE);
+      return;
+    }
+    if (options.check) {
+      const stale = staleFiles(options);
+      if (stale.length) {
+        console.error(`Directory edition in ${options.out} does not match its sources:\n  ${stale.join('\n  ')}\nRegenerate it with: node scripts/build-directory-plugin.js`);
+        process.exitCode = 1;
+      } else {
+        console.log(`Directory edition in ${options.out} matches its sources.`);
+      }
       return;
     }
     const result = build(options);
@@ -215,4 +267,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { policyViolations };
+module.exports = { policyViolations, staleFiles };

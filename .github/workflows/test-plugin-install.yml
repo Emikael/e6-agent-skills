@@ -34,6 +34,9 @@ jobs:
       - name: Test Claude directory edition (no hooks, allowed file types only)
         run: node --test scripts/build-directory-plugin-test.js
 
+      - name: Check claude-directory/ matches its sources
+        run: node scripts/build-directory-plugin.js --check
+
       - name: Test benchmark harness
         run: node --test scripts/run-benchmark-test.js
 
@@ -183,6 +186,9 @@ jobs:
 
       - name: Validate marketplace and plugin manifests
         run: claude plugin validate .
+
+      - name: Validate the Claude directory edition
+        run: claude plugin validate claude-directory
 
   test-install:
     name: Test plugin installation

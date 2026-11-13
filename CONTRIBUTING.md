@@ -69,6 +69,7 @@ Before proposing a change, search the [skill-change rejection ledger](evals/skil
 - Keep changes focused and minimal
 - Preserve the existing structure and tone
 - Test that YAML frontmatter remains valid after edits
+- Regenerate the Claude directory edition with `node scripts/build-directory-plugin.js` and commit `claude-directory/` with your change; CI fails when it is stale. Never edit that folder by hand
 
 If a skill or description change is rejected based on eval results, add one row to the ledger with the date, affected skill, concise attempted change, before-to-after rank-1 score, and rejected PR link and outcome. Land that ledger-only update separately on the default branch; do not leave it only on the rejected proposal branch, where closing or force-pushing the proposal could discard the record.
 

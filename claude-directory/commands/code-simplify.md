@@ -1,0 +1,11 @@
+---
+description: Simplify code for clarity and maintainability — reduce complexity without changing behavior
+---
+
+Use e6-code-simplification with e6-caveman. Simplify recently changed code, or the specified scope, without changing observable behavior. Return evidence to the caller: the coordinator in an active workflow, otherwise the user.
+
+Read project rules and conventions, the target code, its callers and contracts, and its tests. Run the focused baseline tests before editing; report a baseline failure instead of attributing it to the refactor. Add characterization tests for uncovered caller-visible behavior. Never edit inside `simplify-ignore` blocks.
+
+Apply one simplification at a time (guard clauses for deep nesting, splitting mixed responsibilities, clearer names, reusing the canonical helper, removing proven dead code or generated boilerplate) and rerun focused checks after each. Revert any change that fails or only relocates complexity. Then run the required build and lint gates, exercise the affected runtime path, and review the diff with e6-code-review-and-quality.
+
+Report baseline and final results, runtime evidence, and anything unverified.
