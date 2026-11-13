@@ -49,7 +49,7 @@ Before adding a new skill or significantly reworking an existing one, run the pr
 - Validate: `node scripts/validate-skills.js`, reference/command/artifact/version validators
 - Activation: `bash hooks/session-start-test.sh`, installer tests
 - Portable skills: `node scripts/build-portable-skills.js --out <dir> [--zip]` — self-contained skill folders/ZIPs for single-folder hosts
-- Claude directory edition: `node scripts/build-directory-plugin.js --out <dir>` — hook-free, Markdown/JSON-only plugin the release workflow publishes to the `claude-directory` branch; skills must not ship scripts
+- Claude directory edition: `node scripts/build-directory-plugin.js` regenerates `claude-directory/`, the hook-free, Markdown/JSON-only plugin the directory listing tracks on `main`; `--check` fails when it is stale. Never edit `claude-directory/` by hand, and skills must not ship scripts
 - Evals: `node scripts/run-evals.js` — trigger/routing evals for every skill (CI); `--behavioral <skill>` for graded runs
 
 ## Pull Requests

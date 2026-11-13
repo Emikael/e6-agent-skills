@@ -27,7 +27,7 @@ Skills instruct Claude to run your project's own test, lint, and build commands 
 
 ## Difference from the GitHub marketplace edition
 
-The [full repository](https://github.com/Emikael/e6-agent-skills) also ships a `SessionStart` hook that prints the workflow bootstrap at the start of each session, installers for other hosts, validators, and evals. To get that hook, install from the repository's own marketplace instead: `/plugin marketplace add Emikael/e6-agent-skills`, then `/plugin install e6-agent-skills@e6-agent-skills`. The skills, agents, commands, and references are identical in both editions; this one is generated from the same sources at each release.
+The [full repository](https://github.com/Emikael/e6-agent-skills) also ships a `SessionStart` hook that prints the workflow bootstrap at the start of each session, installers for other hosts, validators, and evals. To get that hook, install from the repository's own marketplace instead: `/plugin marketplace add Emikael/e6-agent-skills`, then `/plugin install e6-agent-skills@e6-agent-skills`. The skills, agents, commands, and references are identical in both editions; this one is generated from the same sources and kept in step with them on every change.
 
 ## License
 

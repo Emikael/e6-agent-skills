@@ -100,6 +100,45 @@ test('refuses a non-empty output directory unless forced, and keeps .git when fo
   assert.ok(!fs.existsSync(path.join(paths.out, 'stale.md')));
 });
 
+test('rebuilds the pack\'s claude-directory folder in place without --force', t => {
+  const paths = fixture(t);
+  const edition = path.join(paths.pack, 'claude-directory');
+  write(path.join(edition, 'stale.md'), 'old\n');
+  const result = spawnSync(process.execPath, [BUILDER, '--pack', paths.pack, '--repo-url', REPO_URL], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!fs.existsSync(path.join(edition, 'stale.md')));
+  assert.ok(fs.existsSync(path.join(edition, 'skills', 'alpha', 'SKILL.md')));
+});
+
+test('refuses any other output folder inside the pack', t => {
+  const paths = fixture(t);
+  const result = build({ pack: paths.pack, out: path.join(paths.pack, 'edition') });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--out must be outside the pack, its claude-directory\/ folder, or under its dist\/ directory/);
+});
+
+test('--check passes on a current edition and names each stale file', t => {
+  const paths = fixture(t);
+  const check = () => spawnSync(process.execPath, [BUILDER, '--pack', paths.pack, '--repo-url', REPO_URL, '--check'], { encoding: 'utf8' });
+  const edition = path.join(paths.pack, 'claude-directory');
+
+  assert.equal(check().status, 1, 'a missing edition is stale');
+  assert.equal(spawnSync(process.execPath, [BUILDER, '--pack', paths.pack, '--repo-url', REPO_URL]).status, 0);
+  const current = check();
+  assert.equal(current.status, 0, current.stderr);
+  assert.match(current.stdout, /matches its sources/);
+
+  write(path.join(paths.pack, 'skills', 'alpha', 'SKILL.md'), '---\nname: alpha\ndescription: Use when testing again.\n---\nChanged.\n');
+  write(path.join(paths.pack, 'agents', 'qa.md'), '---\nname: qa\ndescription: Tests.\n---\nBody.\n');
+  write(path.join(edition, 'notes.md'), '# Hand-written\n');
+  const stale = check();
+  assert.equal(stale.status, 1);
+  assert.match(stale.stderr, /skills\/alpha\/SKILL\.md: out of date/);
+  assert.match(stale.stderr, /agents\/qa\.md: missing/);
+  assert.match(stale.stderr, /notes\.md: not generated from the sources/);
+  assert.match(stale.stderr, /Regenerate it with: node scripts\/build-directory-plugin\.js/);
+});
+
 test('policyViolations reports each directory rule', t => {
   const paths = fixture(t);
   assert.equal(build(paths).status, 0);
@@ -135,11 +174,11 @@ test('policyViolations reports each directory rule', t => {
   assert.doesNotMatch(violations, /commands\/read\.md/);
 });
 
-test('the real pack builds a compliant edition', t => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'e6-directory-real-'));
-  t.after(() => fs.rmSync(out, { recursive: true, force: true }));
-  const result = spawnSync(process.execPath, [BUILDER, '--out', out, '--force'], { encoding: 'utf8' });
+test('the committed claude-directory edition is compliant and matches the real pack', () => {
+  const result = spawnSync(process.execPath, [BUILDER, '--check'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(fs.existsSync(path.join(out, 'skills', 'using-e6-agent-skills', 'SKILL.md')));
-  assert.ok(!fs.existsSync(path.join(out, 'hooks')));
+  const edition = path.join(__dirname, '..', 'claude-directory');
+  assert.ok(fs.existsSync(path.join(edition, 'skills', 'using-e6-agent-skills', 'SKILL.md')));
+  assert.ok(!fs.existsSync(path.join(edition, 'hooks')));
+  assert.deepEqual(policyViolations(edition), []);
 });
